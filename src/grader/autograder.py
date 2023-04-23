@@ -49,7 +49,7 @@ class Autograder:
         supplied_files: List[str] = [],
         solution_dirname: str = "",
         verbose_rubric: bool = False,
-        make_command: str = None,
+        build_command: str = None,
         compile_points: int = 0,
     ):
         """Autograder initializer.
@@ -72,7 +72,7 @@ class Autograder:
         self.verbose_rubric = verbose_rubric
         self.compile_points = compile_points
 
-        self.make_command = make_command
+        self.build_command = build_command
         self.compiled = False
 
         self.test_suites: List[TestSuite] = []
@@ -147,14 +147,14 @@ class Autograder:
             )
         log("Finished checking missing files.")
 
-    def get_default_make_command(self, arm=False):
+    def get_default_build_command(self, arm=False):
         return "make" if not arm else f"make CC={self.ARM_COMPILER}"
 
-    def get_make_command(self, arm=False):
+    def get_build_command(self, arm=False):
         return (
-            self.make_command
-            if self.make_command is not None
-            else self.get_default_make_command(arm)
+            self.build_command
+            if self.build_command is not None
+            else self.get_default_build_command(arm)
         )
 
     def get_compile_result_message(self):
@@ -186,9 +186,9 @@ class Autograder:
         log(f"Compiling student code ({arm=})...")
         self.copy_supplied_files()
         os.chdir(self.sandbox_path)
-        run("make clean")
-        make_cmd = self.get_make_command(arm)
-        compiler_process = run(make_cmd, capture_output=True, text=True)
+        build_cmd = self.get_build_command(arm)
+        logging.debug(f"{build_cmd=}")
+        compiler_process = run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
         if compiled:
             log("Student code compiled successfully.")
@@ -260,6 +260,7 @@ if __name__ == "__main__":
         required_files="hello.c",
         submission_dirpath="/home/jerry/gradescope.py/target/submission",
         solution_dirname="/home/jerry/gradescope.py/target/solution",
+        build_command="gcc hello.c -o hello",
         verbose_rubric=True,
     )
     ag.add_test_suite(
