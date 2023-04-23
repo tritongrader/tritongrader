@@ -257,7 +257,7 @@ class Autograder:
 if __name__ == "__main__":
     ag = Autograder(
         name="Test Autograder",
-        required_files="hello.c",
+        required_files=["hello.c"],
         submission_dirpath="/home/jerry/gradescope.py/target/submission",
         solution_dirname="/home/jerry/gradescope.py/target/solution",
         build_command="gcc hello.c -o hello",

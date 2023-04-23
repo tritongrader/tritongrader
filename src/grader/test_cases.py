@@ -41,17 +41,22 @@ class TestCase:
         self.suite = suite
         self.arm: bool = arm
         self.binary_io: bool = binary_io
+
         self.command_path: str = command_path
         self.command: str = ""
-        self.input_path: str = input_path
+
+        self.input_path: str = input_path if os.path.exists(input_path) else None
         self.input: str = ""
         self.input_binary: bytes = b""
+
         self.exp_stdout_path: str = exp_stdout_path
         self.exp_stdout: str = ""
         self.exp_stdout_binary: bytes = b""
+
         self.exp_stderr_path: str = exp_stderr_path
         self.exp_stderr: str = ""
         self.exp_stderr_binary: bytes = b""
+
         self.name: str = name
         self.point_value: float = point_value
         self.timeout: float = timeout
@@ -90,6 +95,8 @@ class TestCase:
         self.exp_stderr = self.bin2text(self.exp_stderr_binary)
 
     def read_test_input(self, input_file_path):
+        if not input_file_path:
+            return
         with open(input_file_path, self.open_mode()) as in_fp:
             if self.binary_io:
                 self.input_binary = in_fp.read()
@@ -115,6 +122,17 @@ class TestCase:
                 self.exp_stderr = exp_stderr_fp.read()
                 return self.exp_stderr == self.result.stderr
 
+    def get_execute_command(self):
+        self.command = self.extract_command_from_bash_file(self.command_path)
+        self.read_test_input(self.input_path)
+        log(f"Running {str(self)}")
+        # if running in an ARM simulator, we cannot use the bash script
+        # and must instead use the command inside directly.
+        exe = self.command if self.arm else self.command_path
+        if self.input_path:
+            exe += f" < {self.input_path}"
+        return exe
+
     def execute(self):
         # reset states
         self.result = TestCaseResult()
@@ -122,15 +140,10 @@ class TestCase:
         # run test case
         self.result.has_run = True
         try:
-            self.command = self.extract_command_from_bash_file(self.command_path)
-            self.read_test_input(self.input_path)
-            log(f"Running {str(self)}")
+            exe_cmd = self.get_execute_command()
             start_ts = time.time()
-            # if running in an ARM simulator, we cannot use the bash script
-            # and must instead use the command inside directly.
-            exe = self.command if self.arm else self.command_path
             test = run(
-                f"{exe} < {self.input_path}",
+                exe_cmd,
                 capture_output=True,
                 print_command=True,
                 text=(not self.binary_io),
