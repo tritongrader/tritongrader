@@ -1,5 +1,6 @@
 import os
 import logging
+import pprint
 
 from tempfile import TemporaryDirectory
 from typing import Tuple, List
@@ -9,10 +10,9 @@ from test_suite import TestSuite
 from rubric import Rubric
 
 logging.basicConfig(
-    format="[%(asctime)s] %(message)s",
-    encoding="utf-8", 
-    level=logging.DEBUG
+    format="[%(asctime)s] %(message)s", encoding="utf-8", level=logging.DEBUG
 )
+
 
 class Autograder:
     """
@@ -94,7 +94,7 @@ class Autograder:
         # Copy submission files to separate sandbox folder for testing
         self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
         self.sandbox_path = self.sandbox.name
-        ## TODO: Put this in the create_sandbox_directory method and 
+        ## TODO: Put this in the create_sandbox_directory method and
         ## do it in a more platform-independent way.
         run(f"cp -r {self.submission_path}/* {self.sandbox_path}")
 
@@ -256,7 +256,7 @@ class Autograder:
 
 if __name__ == "__main__":
     ag = Autograder(
-        name="Test Autograder", 
+        name="Test Autograder",
         required_files="hello.c",
         submission_dirpath="/home/jerry/gradescope.py/target/submission",
         solution_dirname="/home/jerry/gradescope.py/target/solution",
@@ -266,7 +266,8 @@ if __name__ == "__main__":
         suite_name="Basic",
         test_list=[
             ("1", 1),
-        ]
+        ],
     )
     rubric = ag.execute()
-    print(rubric)
+    pp = pprint.PrettyPrinter(indent=2)
+    pp.pprint(rubric)
