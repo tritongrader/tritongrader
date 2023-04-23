@@ -1,12 +1,18 @@
 import os
-import hashlib
-import time
+import logging
+
+from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
 from helper_methods import *
 from test_suite import TestSuite
 from rubric import Rubric
 
+logging.basicConfig(
+    format="[%(asctime)s] %(message)s",
+    encoding="utf-8", 
+    level=logging.DEBUG
+)
 
 class Autograder:
     """
@@ -38,6 +44,7 @@ class Autograder:
         self,
         name: str = "",
         hide_scores: bool = True,
+        submission_dirpath: str = "",
         required_files: List[str] = [],
         supplied_files: List[str] = [],
         solution_dirname: str = "",
@@ -76,24 +83,25 @@ class Autograder:
         # set up paths
         #
 
-        self.set_base_path()
         # path to solution directory as specified in docstring
-        self.solution_path = f"{self.base_path}/{self.GIT_REPO_NAME}/{solution_dirname}"
+        self.solution_path = solution_dirname
         # path to the in/ directory containing cmdX and testX files.
         self.solution_in_path = f"{self.solution_path}/in"
         # path to the exp/ directory containing errX and outX files.
         self.solution_exp_path = f"{self.solution_path}/exp"
         # path to the directory containing student submission files.
-        self.submission_path = self.base_path + "/submission"
+        self.submission_path = submission_dirpath
         # Copy submission files to separate sandbox folder for testing
-        self.sandbox_path = f"{self.base_path}/{self.get_sandbox_name()}"
-        os.mkdir(self.sandbox_path)
+        self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
+        self.sandbox_path = self.sandbox.name
+        ## TODO: Put this in the create_sandbox_directory method and 
+        ## do it in a more platform-independent way.
         run(f"cp -r {self.submission_path}/* {self.sandbox_path}")
 
-    def get_sandbox_name(self):
-        ts_hash = hashlib.md5(str(time.time()).encode()).hexdigest().upper()
-        gradername = self.name.strip().lower().replace(" ", "_")
-        return f"{gradername}_{ts_hash}"
+    def create_sandbox_directory(self) -> str:
+        tmpdir = TemporaryDirectory(prefix="Autograder")
+        logging.info(f"Sandbox created at {tmpdir.name}")
+        return tmpdir
 
     def add_test_suite(
         self,
@@ -118,15 +126,6 @@ class Autograder:
         )
         suite.create_test_cases_from_list(test_list)
         self.test_suites.append(suite)
-
-    def set_base_path(self):
-        """
-        Change to the autograder root directory. (Should be /autograder.)
-        """
-        dir_list = os.getcwd().split("/")
-        end_idx = dir_list.index("autograder") + 1
-        self.base_path = "/".join(dir_list[:end_idx])
-        os.chdir(self.base_path)
 
     def check_missing_files(self):
         log("Checking missing files...")
@@ -253,3 +252,21 @@ class Autograder:
         self.check_missing_files()
         self.run_tests()
         return self.rubric.export()
+
+
+if __name__ == "__main__":
+    ag = Autograder(
+        name="Test Autograder", 
+        required_files="hello.c",
+        submission_dirpath="/home/jerry/gradescope.py/target/submission",
+        solution_dirname="/home/jerry/gradescope.py/target/solution",
+        verbose_rubric=True,
+    )
+    ag.add_test_suite(
+        suite_name="Basic",
+        test_list=[
+            ("1", 1),
+        ]
+    )
+    rubric = ag.execute()
+    print(rubric)
