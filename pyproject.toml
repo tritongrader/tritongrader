@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gradescopy"
+version = "0.0.1"
+authors = [
+  { name="Jerry Yu" },
+]
+description = "A lightweight Python package for building Gradescope autograders."
+readme = "README.md"
+requires-python = ">=3.7"
+calssifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/jyu283/gradescope.py"
+
