@@ -37,7 +37,6 @@ class Autograder:
     For questions and bug reporting, contact Jerry Yu <jiy066@ucsd.edu>
     """
 
-    GIT_REPO_NAME = "PA9_autograder"  # TODO: Should be able to deduce this.
     ARM_COMPILER = "arm-linux-gnueabi-gcc"
 
     def __init__(
