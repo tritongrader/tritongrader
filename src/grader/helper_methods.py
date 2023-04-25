@@ -3,6 +3,13 @@ import json
 import subprocess
 
 
+def get_countable_unit_string(count: int, unit: str):
+    ret = f"{count} {unit}"
+    if count != 1:
+        ret += "s"
+    return ret
+
+
 def output_score(total_score):
     if os.path.isdir("/autograder/results"):
         resultsjson = open("/autograder/results/results.json", "w")
