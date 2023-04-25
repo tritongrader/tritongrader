@@ -1,6 +1,7 @@
 import os
 import logging
 import pprint
+import shutil
 
 from tempfile import TemporaryDirectory
 from typing import Tuple, List
@@ -91,15 +92,14 @@ class Autograder:
         # path to the directory containing student submission files.
         self.submission_path = submission_dirpath
         # Copy submission files to separate sandbox folder for testing
-        self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
-        self.sandbox_path = self.sandbox.name
-        ## TODO: Put this in the create_sandbox_directory method and
-        ## do it in a more platform-independent way.
-        run(f"cp -r {self.submission_path}/* {self.sandbox_path}")
+        self.sandbox: TemporaryDirectory = self.create_sandbox_directory(
+            self.submission_path
+        )
 
-    def create_sandbox_directory(self) -> str:
+    def create_sandbox_directory(self, submission_dirpath: str) -> str:
         tmpdir = TemporaryDirectory(prefix="Autograder")
         logging.info(f"Sandbox created at {tmpdir.name}")
+        shutil.copytree(submission_dirpath, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
     def add_test_suite(
@@ -170,11 +170,11 @@ class Autograder:
             # create directories if supplied files are paths (e.g. "in/BOOK")
             tokens = f.rsplit("/", 1)
             if len(tokens) == 2:
-                parent_dir = self.sandbox_path + "/" + tokens[0]
+                parent_dir = self.sandbox.name + "/" + tokens[0]
                 filename = tokens[1]
                 run(f"mkdir -p {parent_dir}")
             else:
-                parent_dir = self.sandbox_path
+                parent_dir = self.sandbox.name
                 filename = tokens[0]
             run(f"cp {self.solution_path}/{f} {parent_dir}/{filename}")
 
@@ -184,7 +184,7 @@ class Autograder:
 
         logging.info(f"Compiling student code ({arm=})...")
         self.copy_supplied_files()
-        os.chdir(self.sandbox_path)
+        os.chdir(self.sandbox.name)
         build_cmd = self.get_build_command(arm)
         logging.debug(f"{build_cmd=}")
         compiler_process = run(build_cmd, capture_output=True, text=True)
@@ -235,7 +235,7 @@ class Autograder:
                 )
                 continue
 
-            test_suite.run_tests(executable_directory=self.sandbox_path)
+            test_suite.run_tests(executable_directory=self.sandbox.name)
             self.add_suite_to_rubric(test_suite)
 
     def get_test_cases_summary(self):
