@@ -127,7 +127,7 @@ class Autograder:
         self.test_suites.append(suite)
 
     def check_missing_files(self):
-        log("Checking missing files...")
+        logging.info("Checking missing files...")
         missing_files = []
         for filename in self.required_files:
             fpath = os.path.join(self.submission_path, filename)
@@ -144,7 +144,7 @@ class Autograder:
                 output="Missing files:\n" + "\n".join(missing_files),
                 passed=False,
             )
-        log("Finished checking missing files.")
+        logging.info("Finished checking missing files.")
 
     def get_default_build_command(self, arm=False):
         return "make" if not arm else f"make CC={self.ARM_COMPILER}"
@@ -182,7 +182,7 @@ class Autograder:
         if self.compiled:
             return 0
 
-        log(f"Compiling student code ({arm=})...")
+        logging.info(f"Compiling student code ({arm=})...")
         self.copy_supplied_files()
         os.chdir(self.sandbox_path)
         build_cmd = self.get_build_command(arm)
@@ -190,10 +190,10 @@ class Autograder:
         compiler_process = run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
         if compiled:
-            log("Student code compiled successfully.")
+            logging.info("Student code compiled successfully.")
             self.compiled = True
         else:
-            log(
+            logging.info(
                 "Student code failed to compile "
                 + f"(returncode={compiler_process.returncode}):\n"
                 + str(compiler_process.stderr)
@@ -230,7 +230,9 @@ class Autograder:
     def run_tests(self):
         for test_suite in self.test_suites:
             if self.compile_student_code(arm=test_suite.arm) != 0:
-                log(f"Skipping {test_suite.name} test(s) due to failed compilation.")
+                logging.info(
+                    f"Skipping {test_suite.name} test(s) due to failed compilation."
+                )
                 continue
 
             test_suite.run_tests(executable_directory=self.sandbox_path)
@@ -247,7 +249,7 @@ class Autograder:
 
         Returns: All rubric items
         """
-        log(f"{self.name} starting...")
+        logging.info(f"{self.name} starting...")
         self.check_missing_files()
         self.run_tests()
         return self.rubric.export()

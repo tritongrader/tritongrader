@@ -1,4 +1,5 @@
 from typing import List, Optional
+import logging
 
 from helper_methods import *
 
@@ -67,7 +68,9 @@ class Rubric:
         passed: Optional[bool] = None,
         visibility: str = VIS_VISIBLE,
     ):
-        log(f"Rubric: {self.name} - Adding rubric item {name=} {score=} {passed=}")
+        logging.info(
+            f"Rubric: {self.name} - Adding rubric item {name=} {score=} {passed=}"
+        )
         self.rubric_items.append(
             RubricItem(
                 name=f"{self.name}: {name}",
@@ -82,5 +85,5 @@ class Rubric:
         self._score_for_logging += score
 
     def export(self):
-        log(f"Rubric: {self.name} - Total score: {self._score_for_logging}")
+        logging.info(f"Rubric: {self.name} - Total score: {self._score_for_logging}")
         return [ri.as_dict() for ri in self.rubric_items]

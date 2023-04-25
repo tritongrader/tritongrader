@@ -1,6 +1,7 @@
 from typing import List, Tuple
 from datetime import datetime
 from typing import List
+import logging
 
 from helper_methods import *
 from test_cases import TestCase
@@ -73,11 +74,11 @@ class TestSuite:
             return datetime.now(self.unhide_time.tzinfo) < self.unhide_time
 
     def run_tests(self, executable_directory):
-        log(f"Running {self.name} test(s)...")
+        logging.info(f"Running {self.name} test(s)...")
         os.chdir(executable_directory)
         for test in self.test_cases:
             test.execute()
-        log(f"Finished running {self.name} test(s).")
+        logging.info(f"Finished running {self.name} test(s).")
 
     def generate_suite_summary(self):
         passed = 0
@@ -91,7 +92,7 @@ class TestSuite:
 
         out = f"{self.name}: {passed}/{total_tests} passed, ({points}/{total_points} points)."
         if self.hide_results():
-            log(out)
+            logging.info(out)
             return f"{self.name}: Results hidden at this time."
         else:
             return out

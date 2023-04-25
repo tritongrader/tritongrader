@@ -1,6 +1,7 @@
 import time
 import traceback
 import binascii
+import logging
 
 from helper_methods import *
 
@@ -125,7 +126,7 @@ class TestCase:
     def get_execute_command(self):
         self.command = self.extract_command_from_bash_file(self.command_path)
         self.read_test_input(self.input_path)
-        log(f"Running {str(self)}")
+        logging.info(f"Running {str(self)}")
         # if running in an ARM simulator, we cannot use the bash script
         # and must instead use the command inside directly.
         exe = self.command if self.arm else self.command_path
@@ -167,10 +168,10 @@ class TestCase:
             self.result.passed = stderr_ok and stdout_ok
             self.result.score = self.point_value if self.result.passed else 0
         except subprocess.TimeoutExpired:
-            log(f"{self.name} timed out (limit={self.timeout}s)!")
+            logging.info(f"{self.name} timed out (limit={self.timeout}s)!")
             self.result.timed_out = True
         except Exception as e:
-            log(f"{self.name} raised unexpected exception!\n{str(e)}")
+            logging.info(f"{self.name} raised unexpected exception!\n{str(e)}")
             traceback.print_exc()
             self.result.error = True
 
