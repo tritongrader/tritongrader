@@ -63,8 +63,7 @@ class Autograder:
             solution_dirname (str, optional): directory containing solution files and test files. Defaults to "".
             verbose_rubric (bool, optional): if rubrics should contain verbose descriptions. Defaults to False.
         """
-        self.name = name  # name can only consist of ascii letters!
-        assert self.name.isascii()
+        self.name = name
 
         self.hide_scores = hide_scores
         self.required_files = required_files
