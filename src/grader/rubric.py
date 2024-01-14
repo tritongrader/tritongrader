@@ -1,7 +1,7 @@
 from typing import List, Optional
 import logging
 
-from helper_methods import *
+from grader.utils import *
 
 
 class RubricItem:

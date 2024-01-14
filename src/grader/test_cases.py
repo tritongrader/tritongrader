@@ -3,7 +3,7 @@ import traceback
 import binascii
 import logging
 
-from helper_methods import *
+from grader.utils import *
 
 
 class TestCaseResult:

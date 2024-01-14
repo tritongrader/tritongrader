@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 import logging
 
-from helper_methods import *
+from grader.utils import *
 from test_cases import TestCase
 
 
