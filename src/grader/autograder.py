@@ -248,23 +248,3 @@ class Autograder:
         self.check_missing_files()
         self.run_tests()
         return self.rubric.export()
-
-
-if __name__ == "__main__":
-    ag = Autograder(
-        name="Test Autograder",
-        required_files=["hello.c"],
-        submission_dirpath="/home/jerry/gradescope.py/target/submission",
-        solution_dirname="/home/jerry/gradescope.py/target/solution",
-        build_command="gcc hello.c -o hello",
-        verbose_rubric=True,
-    )
-    ag.add_test_suite(
-        suite_name="Basic",
-        test_list=[
-            ("1", 1),
-        ],
-    )
-    rubric = ag.execute()
-    pp = pprint.PrettyPrinter(indent=2)
-    pp.pprint(rubric)
