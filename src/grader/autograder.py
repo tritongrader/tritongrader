@@ -10,10 +10,6 @@ from grader.utils import *
 from test_suite import TestSuite
 from rubric import Rubric
 
-logging.basicConfig(
-    format="[%(asctime)s] %(message)s", encoding="utf-8", level=logging.DEBUG
-)
-
 
 class Autograder:
     """
@@ -181,7 +177,7 @@ class Autograder:
         if self.compiled:
             return 0
 
-        logging.info(f"Compiling student code ({arm=})...")
+        logging.info(f"Compiling student code (arm={arm})...")
         self.copy_supplied_files()
         os.chdir(self.sandbox.name)
         build_cmd = self.get_build_command(arm)
