@@ -98,7 +98,6 @@ class Autograder:
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
-        arm=True,
         binary_io=False,
         hidden=False,
         unhide_time=None,
@@ -111,7 +110,7 @@ class Autograder:
                 exp_stderr_path=f"{self.solution_exp_path}/err{test_id}",
                 name=str(test_id) if not prefix else f"{prefix} - {test_id}",
                 timeout=default_timeout_ms,
-                arm=arm,
+                arm=self.arm,
                 point_value=point_value,
                 binary_io=binary_io,
                 hidden=hidden,
@@ -124,23 +123,25 @@ class Autograder:
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
-        arm=True,
         binary_io=False,
     ):
-        self._add_tests(test_list, prefix, default_timeout_ms, arm, binary_io, False)
+        self._add_tests(test_list, prefix, default_timeout_ms, binary_io, False)
 
     def add_private_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
-        arm=True,
-        hidden=False,
-        unhide_time=None,
         binary_io=False,
+        unhide_time=None,
     ):
         self._add_tests(
-            test_list, prefix, default_timeout_ms, arm, hidden, unhide_time, binary_io
+            test_list,
+            prefix,
+            default_timeout_ms,
+            binary_io,
+            hidden=True,
+            unhide_time=unhide_time,
         )
 
     def check_missing_files(self):
@@ -233,7 +234,7 @@ class Autograder:
 
         if self.compile_student_code() != 0:
             logging.info(f"Skipping {self.name} test(s) due to failed compilation.")
-        
+
         logging.info(f"Running {self.name} test(s)...")
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
@@ -245,9 +246,9 @@ class Autograder:
                 max_score=test.result.score,
                 output=test.generate_test_summary(verbose=self.verbose_rubric),
                 passed=test.result.passed,
-                visibility=vis
+                visibility=vis,
             )
-        
+
         logging.info(f"Finished running {self.name} test(s).")
 
         return self.rubric.export()

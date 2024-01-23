@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int main(int argc, char *argv[])
 {
@@ -15,11 +16,11 @@ int main(int argc, char *argv[])
  
     while (h > l) {
         if (str[l++] != str[h--]) {
-            printf("%s is not a palindrome\n", str);
+            printf("%s is not a palindrome.\n", str);
             return 0;
         }
     }
  
-    printf("%s is a palindrome\n", str);
+    printf("%s is a palindrome.\n", str);
     return 0;
 }
