@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import List
 import logging
 
-from grader.utils import *
+from tritongrader.utils import *
 from test_cases import TestCase
 
 

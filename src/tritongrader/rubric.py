@@ -1,7 +1,7 @@
 from typing import List, Optional
 import logging
 
-from grader.utils import *
+from tritongrader.utils import *
 
 
 class RubricItem:

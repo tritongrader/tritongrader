@@ -6,7 +6,7 @@ import shutil
 from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
-from grader.utils import *
+from tritongrader.utils import *
 from test_suite import TestSuite
 from rubric import Rubric
 
