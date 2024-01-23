@@ -4,7 +4,7 @@ from typing import List
 import logging
 
 from tritongrader.utils import *
-from test_cases import TestCase
+from tritongrader.test_cases import TestCase
 
 
 class TestSuite:

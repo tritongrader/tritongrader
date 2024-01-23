@@ -7,8 +7,8 @@ from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
 from tritongrader.utils import *
-from test_suite import TestSuite
-from rubric import Rubric
+from tritongrader.test_suite import TestSuite
+from tritongrader.rubric import Rubric
 
 
 class Autograder:
