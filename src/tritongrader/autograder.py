@@ -1,13 +1,12 @@
 import os
 import logging
-import pprint
 import shutil
 
 from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
 from tritongrader.utils import *
-from tritongrader.test_suite import TestSuite
+from tritongrader.test_case import TestCase
 from tritongrader.rubric import Rubric
 
 
@@ -15,11 +14,6 @@ class Autograder:
     """
     The Autograder class defines one autograder that can be applied to parts of
     an assignment that share common source files and build procedure (e.g. Makefile).
-
-    You can define multiple test suites for customizable point values in one autograder.
-
-    The submission files can either be compiled natively or on ARM (w/ qemu). You will
-    need to specify which platform to use for each test suite.
 
     You MUST provide a solution directory in this repo that contains:
         a) all course-supplied files that need to be copied and compiled along with
@@ -38,15 +32,16 @@ class Autograder:
 
     def __init__(
         self,
-        name: str = "",
+        name: str,
+        submission_path: str,
+        tests_path: str,
         hide_scores: bool = True,
-        submission_dirpath: str = "",
         required_files: List[str] = [],
         supplied_files: List[str] = [],
-        solution_dirname: str = "",
         verbose_rubric: bool = False,
         build_command: str = None,
         compile_points: int = 0,
+        arm=True,
     ):
         """Autograder initializer.
         Initializes fields and paths.
@@ -61,6 +56,7 @@ class Autograder:
         """
         self.name = name
 
+        self.arm = arm
         self.hide_scores = hide_scores
         self.required_files = required_files
         self.supplied_files = supplied_files
@@ -70,7 +66,7 @@ class Autograder:
         self.build_command = build_command
         self.compiled = False
 
-        self.test_suites: List[TestSuite] = []
+        self.test_cases: List[TestCase] = []
 
         self.rubric = Rubric(self.name, self.hide_scores)
 
@@ -79,47 +75,73 @@ class Autograder:
         #
 
         # path to solution directory as specified in docstring
-        self.solution_path = solution_dirname
+        self.solution_path = tests_path
         # path to the in/ directory containing cmdX and testX files.
         self.solution_in_path = f"{self.solution_path}/in"
         # path to the exp/ directory containing errX and outX files.
         self.solution_exp_path = f"{self.solution_path}/exp"
         # path to the directory containing student submission files.
-        self.submission_path = submission_dirpath
+        self.submission_path = submission_path
         # Copy submission files to separate sandbox folder for testing
         self.sandbox: TemporaryDirectory = self.create_sandbox_directory(
             self.submission_path
         )
 
-    def create_sandbox_directory(self, submission_dirpath: str) -> str:
-        tmpdir = TemporaryDirectory(prefix="Autograder")
+    def create_sandbox_directory(self, submission_path: str) -> str:
+        tmpdir = TemporaryDirectory(prefix="Autograder_")
         logging.info(f"Sandbox created at {tmpdir.name}")
-        shutil.copytree(submission_dirpath, tmpdir.name, dirs_exist_ok=True)
+        shutil.copytree(submission_path, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
-    def add_test_suite(
+    def _add_tests(
         self,
-        suite_name="",
+        test_list: List[Tuple[str, int]],
+        prefix="",
         default_timeout_ms=500,
         arm=True,
-        test_list: List[Tuple[str, int]] = [],
+        binary_io=False,
+        hidden=False,
+        unhide_time=None,
+    ):
+        for test_id, point_value in test_list:
+            test_case = TestCase(
+                command_path=f"{self.solution_in_path}/cmd{test_id}",
+                input_path=f"{self.solution_in_path}/test{test_id}",
+                exp_stdout_path=f"{self.solution_exp_path}/out{test_id}",
+                exp_stderr_path=f"{self.solution_exp_path}/err{test_id}",
+                name=str(test_id) if not prefix else f"{prefix} - {test_id}",
+                timeout=default_timeout_ms,
+                arm=arm,
+                point_value=point_value,
+                binary_io=binary_io,
+                hidden=hidden,
+                unhide_time=unhide_time,
+            )
+            self.test_cases.append(test_case)
+
+    def add_public_tests(
+        self,
+        test_list: List[Tuple[str, int]],
+        prefix="",
+        default_timeout_ms=500,
+        arm=True,
+        binary_io=False,
+    ):
+        self._add_tests(test_list, prefix, default_timeout_ms, arm, binary_io, False)
+
+    def add_private_tests(
+        self,
+        test_list: List[Tuple[str, int]],
+        prefix="",
+        default_timeout_ms=500,
+        arm=True,
         hidden=False,
         unhide_time=None,
         binary_io=False,
     ):
-        suite = TestSuite(
-            in_directory=self.solution_in_path,
-            command_directory=self.solution_in_path,
-            expected_directory=self.solution_exp_path,
-            suite_name=suite_name,
-            default_timeout_ms=default_timeout_ms,
-            arm=arm,
-            hidden=hidden,
-            unhide_time=unhide_time,
-            binary_io=binary_io,
+        self._add_tests(
+            test_list, prefix, default_timeout_ms, arm, hidden, unhide_time, binary_io
         )
-        suite.create_test_cases_from_list(test_list)
-        self.test_suites.append(suite)
 
     def check_missing_files(self):
         logging.info("Checking missing files...")
@@ -151,15 +173,6 @@ class Autograder:
             else self.get_default_build_command(arm)
         )
 
-    def get_compile_result_message(self):
-        if self.compiled:
-            return "Your submission compiled successfully.\n"
-        else:
-            return (
-                "Your submission failed to compile.\n"
-                + "Please check the Autograder output for more details.\n"
-            )
-
     def copy_supplied_files(self):
         for f in self.supplied_files:
             # create directories if supplied files are paths (e.g. "in/BOOK")
@@ -173,14 +186,14 @@ class Autograder:
                 filename = tokens[0]
             run(f"cp {self.solution_path}/{f} {parent_dir}/{filename}")
 
-    def compile_student_code(self, arm=True) -> int:
+    def compile_student_code(self) -> int:
         if self.compiled:
             return 0
 
-        logging.info(f"Compiling student code (arm={arm})...")
+        logging.info(f"Compiling student code (arm={self.arm})...")
         self.copy_supplied_files()
         os.chdir(self.sandbox.name)
-        build_cmd = self.get_build_command(arm)
+        build_cmd = self.get_build_command(self.arm)
         logging.debug(f"{build_cmd=}")
         compiler_process = run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
@@ -210,35 +223,6 @@ class Autograder:
 
         return compiler_process.returncode
 
-    def add_suite_to_rubric(self, suite: TestSuite):
-        for test in suite.test_cases:
-            vis = Rubric.VIS_AFT_PUBLISH if test.hide_results() else Rubric.VIS_VISIBLE
-            self.rubric.add_item(
-                name=f"{test.name}",
-                score=test.result.score,
-                max_score=test.point_value,
-                output=test.generate_test_summary(verbose=self.verbose_rubric),
-                passed=test.result.passed,
-                visibility=vis,
-            )
-
-    def run_tests(self):
-        for test_suite in self.test_suites:
-            if self.compile_student_code(arm=test_suite.arm) != 0:
-                logging.info(
-                    f"Skipping {test_suite.name} test(s) due to failed compilation."
-                )
-                continue
-
-            test_suite.run_tests(executable_directory=self.sandbox.name)
-            self.add_suite_to_rubric(test_suite)
-
-    def get_test_cases_summary(self):
-        summary = f"Test Summary: {self.name}\n" + self.get_compile_result_message()
-        for suite in self.test_suites:
-            summary += f"\n   - {suite.generate_suite_summary()}"
-        return summary
-
     def execute(self):
         """Execute the autograder
 
@@ -246,5 +230,24 @@ class Autograder:
         """
         logging.info(f"{self.name} starting...")
         self.check_missing_files()
-        self.run_tests()
+
+        if self.compile_student_code() != 0:
+            logging.info(f"Skipping {self.name} test(s) due to failed compilation.")
+        
+        logging.info(f"Running {self.name} test(s)...")
+        os.chdir(self.sandbox.name)
+        for test in self.test_cases:
+            vis = Rubric.VIS_AFT_PUBLISH if test.hide_results() else Rubric.VIS_VISIBLE
+            test.execute()
+            self.rubric.add_item(
+                name=f"{test.name}",
+                score=test.result.score,
+                max_score=test.result.score,
+                output=test.generate_test_summary(verbose=self.verbose_rubric),
+                passed=test.result.passed,
+                visibility=vis
+            )
+        
+        logging.info(f"Finished running {self.name} test(s).")
+
         return self.rubric.export()

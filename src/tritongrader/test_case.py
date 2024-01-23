@@ -3,6 +3,8 @@ import traceback
 import binascii
 import logging
 
+from datetime import datetime
+
 from tritongrader.utils import *
 
 
@@ -28,7 +30,6 @@ class TestCase:
 
     def __init__(
         self,
-        suite,
         command_path: str,
         input_path: str,
         exp_stdout_path: str,
@@ -38,8 +39,9 @@ class TestCase:
         timeout: float = DEFAULT_TIMEOUT_SECS,
         arm: bool = True,
         binary_io: bool = False,
+        hidden: bool = False,
+        unhide_time: datetime = None
     ):
-        self.suite = suite
         self.arm: bool = arm
         self.binary_io: bool = binary_io
 
@@ -61,6 +63,9 @@ class TestCase:
         self.name: str = name
         self.point_value: float = point_value
         self.timeout: float = timeout
+
+        self.hidden: bool = hidden
+        self.unhide_time: datetime = unhide_time
 
         # run states
         self.result: TestCaseResult = TestCaseResult()
@@ -212,12 +217,18 @@ class TestCase:
             )
 
         return summary
-
+    
     def is_hidden_test(self):
-        return self.suite.is_hidden_suite()
-
+        return self.hidden
+    
     def hide_results(self):
-        return self.suite.hide_results()
+        if not self.hidden:
+            return False
+        
+        if self.unhide_time is None:
+            return True
+        else:
+            return datetime.now(self.unhide_time.tzinfo) < self.unhide_time
 
     def generate_test_summary(self, verbose=False):
         return self._generate_summary(verbose)
