@@ -1,6 +1,7 @@
 import os
 import logging
 import shutil
+import platform
 
 from tempfile import TemporaryDirectory
 from typing import Tuple, List
@@ -9,6 +10,7 @@ from tritongrader.utils import run
 from tritongrader.test_case import TestCase
 from tritongrader.rubric import Rubric
 
+logger = logging.getLogger("tritongrader.autograder")
 
 class Autograder:
     """
@@ -89,7 +91,7 @@ class Autograder:
 
     def create_sandbox_directory(self, submission_path: str) -> str:
         tmpdir = TemporaryDirectory(prefix="Autograder_")
-        logging.info(f"Sandbox created at {tmpdir.name}")
+        logger.info(f"Sandbox created at {tmpdir.name}")
         shutil.copytree(submission_path, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
@@ -145,7 +147,7 @@ class Autograder:
         )
 
     def check_missing_files(self):
-        logging.info("Checking missing files...")
+        logger.info("Checking missing files...")
         missing_files = []
         for filename in self.required_files:
             fpath = os.path.join(self.submission_path, filename)
@@ -162,7 +164,7 @@ class Autograder:
                 output="Missing files:\n" + "\n".join(missing_files),
                 passed=False,
             )
-        logging.info("Finished checking missing files.")
+        logger.info("Finished checking missing files.")
 
     def get_default_build_command(self):
         return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
@@ -191,18 +193,18 @@ class Autograder:
         if self.compiled:
             return 0
 
-        logging.info(f"Compiling student code (arm={self.arm})...")
+        logger.info(f"Compiling student code (arm={self.arm})...")
         self.copy_supplied_files()
         os.chdir(self.sandbox.name)
         build_cmd = self.get_build_command()
-        logging.debug(f"{build_cmd=}")
+        logger.debug(f"{build_cmd=}")
         compiler_process = run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
         if compiled:
-            logging.info("Student code compiled successfully.")
+            logger.info("Student code compiled successfully.")
             self.compiled = True
         else:
-            logging.info(
+            logger.info(
                 "Student code failed to compile "
                 + f"(returncode={compiler_process.returncode}):\n"
                 + str(compiler_process.stderr)
@@ -229,13 +231,14 @@ class Autograder:
 
         Returns: All rubric items
         """
-        logging.info(f"{self.name} starting...")
+        logger.info(f"{self.name} starting...")
+        logger.debug(platform.uname())
         self.check_missing_files()
 
         if self.compile_student_code() != 0:
-            logging.info(f"Skipping {self.name} test(s) due to failed compilation.")
+            logger.info(f"Skipping {self.name} test(s) due to failed compilation.")
 
-        logging.info(f"Running {self.name} test(s)...")
+        logger.info(f"Running {self.name} test(s)...")
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
             vis = Rubric.VIS_AFT_PUBLISH if test.hide_results() else Rubric.VIS_VISIBLE
@@ -249,6 +252,6 @@ class Autograder:
                 visibility=vis,
             )
 
-        logging.info(f"Finished running {self.name} test(s).")
+        logger.info(f"Finished running {self.name} test(s).")
 
         return self.rubric.export()
