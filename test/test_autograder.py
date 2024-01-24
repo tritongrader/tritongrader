@@ -8,7 +8,7 @@ sys.path.append(
     os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src")
 )
 
-from tritongrader.autograder import Autograder
+from tritongrader.autograder import Autograder # noqa
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
@@ -28,7 +28,7 @@ if __name__ == "__main__":
             ("1", 1),
             ("2", 2),
         ],
-        prefix="Public Tests"
+        prefix="Public Tests",
     )
 
     ag.add_private_tests(
@@ -37,7 +37,7 @@ if __name__ == "__main__":
             ("4", 4),
         ],
         prefix="Hidden Tests",
-        unhide_time=datetime.now() + timedelta(days=1)
+        unhide_time=datetime.now() + timedelta(days=1),
     )
 
     r = ag.execute()

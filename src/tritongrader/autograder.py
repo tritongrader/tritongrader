@@ -5,7 +5,7 @@ import shutil
 from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
-from tritongrader.utils import *
+from tritongrader.utils import run
 from tritongrader.test_case import TestCase
 from tritongrader.rubric import Rubric
 

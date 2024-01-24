@@ -1,11 +1,13 @@
+import os
 import time
 import traceback
 import binascii
 import logging
+import subprocess
 
 from datetime import datetime
 
-from tritongrader.utils import *
+from tritongrader.utils import run, get_countable_unit_string
 
 
 class TestCaseResult:
@@ -40,7 +42,7 @@ class TestCase:
         arm: bool = True,
         binary_io: bool = False,
         hidden: bool = False,
-        unhide_time: datetime = None
+        unhide_time: datetime = None,
     ):
         self.arm: bool = arm
         self.binary_io: bool = binary_io
@@ -90,7 +92,7 @@ class TestCase:
         """Attempt to convert binary I/O products to Unicode. Fallback to hexdumps."""
         try:
             return binary.decode()
-        except:
+        except Exception:
             return binascii.hexlify(binary, " ", -2).decode()
 
     def stringify_binary_io(self):
@@ -217,14 +219,14 @@ class TestCase:
             )
 
         return summary
-    
+
     def is_hidden_test(self):
         return self.hidden
-    
+
     def hide_results(self):
         if not self.hidden:
             return False
-        
+
         if self.unhide_time is None:
             return True
         else:

@@ -1,8 +1,6 @@
 from typing import List, Optional
 import logging
 
-from tritongrader.utils import *
-
 
 class RubricItem:
     def __init__(
