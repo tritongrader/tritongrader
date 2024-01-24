@@ -75,11 +75,11 @@ class Autograder:
         #
 
         # path to solution directory as specified in docstring
-        self.solution_path = tests_path
+        self.tests_path = tests_path
         # path to the in/ directory containing cmdX and testX files.
-        self.solution_in_path = f"{self.solution_path}/in"
+        self.tests_in_path = f"{self.tests_path}/in"
         # path to the exp/ directory containing errX and outX files.
-        self.solution_exp_path = f"{self.solution_path}/exp"
+        self.tests_exp_path = f"{self.tests_path}/exp"
         # path to the directory containing student submission files.
         self.submission_path = submission_path
         # Copy submission files to separate sandbox folder for testing
@@ -104,10 +104,10 @@ class Autograder:
     ):
         for test_id, point_value in test_list:
             test_case = TestCase(
-                command_path=f"{self.solution_in_path}/cmd{test_id}",
-                input_path=f"{self.solution_in_path}/test{test_id}",
-                exp_stdout_path=f"{self.solution_exp_path}/out{test_id}",
-                exp_stderr_path=f"{self.solution_exp_path}/err{test_id}",
+                command_path=f"{self.tests_in_path}/cmd{test_id}",
+                input_path=f"{self.tests_in_path}/test{test_id}",
+                exp_stdout_path=f"{self.tests_exp_path}/out{test_id}",
+                exp_stderr_path=f"{self.tests_exp_path}/err{test_id}",
                 name=str(test_id) if not prefix else f"{prefix} - {test_id}",
                 timeout=default_timeout_ms,
                 arm=self.arm,
@@ -185,7 +185,7 @@ class Autograder:
             else:
                 parent_dir = self.sandbox.name
                 filename = tokens[0]
-            run(f"cp {self.solution_path}/{f} {parent_dir}/{filename}")
+            run(f"cp {self.tests_path}/{f} {parent_dir}/{filename}")
 
     def compile_student_code(self) -> int:
         if self.compiled:
