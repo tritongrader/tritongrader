@@ -28,7 +28,7 @@ class Autograder:
     For questions and bug reporting, contact Jerry Yu <jiy066@ucsd.edu>
     """
 
-    ARM_COMPILER = "arm-linux-gnueabi-gcc"
+    ARM_COMPILER = "arm-linux-gnueabihf-gcc"
 
     def __init__(
         self,
@@ -164,14 +164,14 @@ class Autograder:
             )
         logging.info("Finished checking missing files.")
 
-    def get_default_build_command(self, arm=False):
-        return "make" if not arm else f"make CC={self.ARM_COMPILER}"
+    def get_default_build_command(self):
+        return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
 
-    def get_build_command(self, arm=False):
+    def get_build_command(self):
         return (
             self.build_command
             if self.build_command is not None
-            else self.get_default_build_command(arm)
+            else self.get_default_build_command()
         )
 
     def copy_supplied_files(self):
@@ -194,7 +194,7 @@ class Autograder:
         logging.info(f"Compiling student code (arm={self.arm})...")
         self.copy_supplied_files()
         os.chdir(self.sandbox.name)
-        build_cmd = self.get_build_command(self.arm)
+        build_cmd = self.get_build_command()
         logging.debug(f"{build_cmd=}")
         compiler_process = run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
