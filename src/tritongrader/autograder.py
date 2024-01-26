@@ -111,7 +111,7 @@ class Autograder:
                 exp_stdout_path=f"{self.tests_exp_path}/out{test_id}",
                 exp_stderr_path=f"{self.tests_exp_path}/err{test_id}",
                 name=str(test_id) if not prefix else f"{prefix} - {test_id}",
-                timeout=default_timeout_ms,
+                timeout=default_timeout_ms / 1000,
                 arm=self.arm,
                 point_value=point_value,
                 binary_io=binary_io,
