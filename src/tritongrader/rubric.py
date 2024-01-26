@@ -118,6 +118,8 @@ class GradescopeRubricFormatter(RubricFormatter):
     See https://gradescope-autograders.readthedocs.io/en/latest/specs/
     """
 
+    DEFAULT_RESULTS_PATH = "/autograder/results/results.json"
+
     def __init__(self, message="", visibility="visible", stdout_visibility="visible"):
         super().__init__()
         self.message = message
@@ -141,21 +143,22 @@ class GradescopeRubricFormatter(RubricFormatter):
             rubric_item["max_score"] = item.max_score
 
         return rubric_item
-
-    def export(self, test=False):
-        results = {
-            "score": 0, # TODO
+    
+    def _get_dict(self):
+        total_score = sum(i.score for i in self.rubric.items)
+        tests = [self.format_item(i) for i in self.rubric.items]
+        return {
+            "score": total_score, # TODO
             "execution_time": 0, # TODO
             "output": self.message,
             "visibility": self.visibility,
             "stdout_visibility": self.stdout_visibility,
-            "tests": [self.format_item(item) for item in self.rubric.rubric_items()],
+            "tests": tests
         }
-        if test:
-            print(json.dumps(results, indent=4, sort_keys=True))
-        else:
-            with open("/autograder/results/results.json", "w+") as fp:
-                json.dump(results, fp)
+
+    def export(self, filepath=DEFAULT_RESULTS_PATH):
+        with open(filepath, "w+") as fp:
+            json.dump(self._get_dict(), fp)
 
 
 class TextFormatter(RubricFormatter):
