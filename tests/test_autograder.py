@@ -30,7 +30,7 @@ if __name__ == "__main__":
         arm=False,
     )
 
-    ag.add_public_tests(
+    ag.create_public_tests(
         [
             ("1", 1),
             ("2", 2),
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         prefix="Public Tests",
     )
 
-    ag.add_private_tests(
+    ag.create_private_tests(
         [
             ("3", 4),
             ("4", 4),

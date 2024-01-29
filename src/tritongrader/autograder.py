@@ -93,6 +93,9 @@ class Autograder:
         shutil.copytree(submission_path, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
+    def add_test(self, test_case: TestCase):
+        self.test_cases.append(test_case)
+
     def _add_tests(
         self,
         test_list: List[Tuple[str, int]],
@@ -114,9 +117,9 @@ class Autograder:
                 binary_io=binary_io,
                 visibility=visibility,
             )
-            self.test_cases.append(test_case)
-
-    def add_public_tests(
+            self.add_test(test_case)
+    
+    def create_public_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
@@ -125,7 +128,7 @@ class Autograder:
     ):
         self._add_tests(test_list, prefix, default_timeout_ms, binary_io, False)
 
-    def add_private_tests(
+    def create_private_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
