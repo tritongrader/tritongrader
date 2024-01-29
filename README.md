@@ -82,7 +82,7 @@ the results in the Gradescope JSON format:
 rubric = ag.execute()
 
 formatter = GradescopeRubricFormatter(
-    ag.execute(),
+    rubric,
     message="tritongrader -- test",
     hidden_tests_setting=GradescopeVisibility.AFTER_PUBLISHED,
 )
