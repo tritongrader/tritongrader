@@ -1,11 +1,17 @@
-import sys
-import os
-import pprint
-
 # This is fairly janky, but it works.
 sys.path.append(
     os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src")
 )
+
+#
+# The following is how a grading script using the tritongrader 
+# library might look. This test file is constantly updated as
+# the library evolves.
+#
+
+import sys
+import os
+import pprint
 
 from tritongrader.autograder import Autograder  # noqa
 from tritongrader.rubric import GradescopeRubricFormatter  # noqa
