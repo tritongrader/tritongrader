@@ -18,11 +18,8 @@ class RubricItem:
         score: int = 0,
         max_score: Optional[int] = None,
         passed: Optional[bool] = None,
-        # TODO: need to decouple visibility from rubric items as much
-        # as possible. While each test should still be defined as
-        # hidden or public, there should not be any additional
-        # complexitiy here beyond that.
         visibility: Visibility = Visibility.VISIBLE,
+        running_time_ms: int = -1,
     ):
         self.name: str = name
         self.output: str = output
@@ -31,6 +28,7 @@ class RubricItem:
         self.passed: bool = passed
         self.visibility: Visibility = visibility
         self.max_score: Optional[int] = max_score
+        self.running_time_ms: int = running_time_ms
 
 
 class Rubric:
@@ -57,6 +55,7 @@ class Rubric:
         max_score: Optional[int] = None,
         passed: Optional[bool] = None,
         visibility: Visibility = Visibility.VISIBLE,
+        running_time_ms: int = -1,
     ):
         logger.info(
             f"Rubric: {self.name} - Adding rubric item {name} score={score} passed={passed}"
@@ -69,6 +68,7 @@ class Rubric:
             max_score=max_score,
             passed=passed,
             visibility=visibility,
+            running_time_ms=running_time_ms,
         )
         self._add_item(rubric_item)
 
@@ -100,29 +100,35 @@ class GradescopeRubricFormatter(RubricFormatter):
 
     def __init__(
         self,
+        rubric,
         message="",
-        visibility="visible",
+        visibility: GradescopeVisibility = GradescopeVisibility.VISIBLE,
         stdout_visibility: GradescopeVisibility = GradescopeVisibility.HIDDEN,
         hidden_tests_setting: GradescopeVisibility = GradescopeVisibility.HIDDEN,
     ):
-        super().__init__()
+        super().__init__(rubric)
         self.message = message
-        self.visibility: Visibility = visibility
+        self.visibility: GradescopeVisibility = visibility
         self.stdout_visibility: GradescopeVisibility = stdout_visibility
         self.hidden_tests_setting: GradescopeVisibility = hidden_tests_setting
-    
-    def get_visibility_setting(self, item: RubricItem) -> str:
+
+    def get_item_visibility(self, item: RubricItem) -> GradescopeVisibility:
         if item.visibility == Visibility.VISIBLE:
-            return "visible"
+            return GradescopeVisibility.VISIBLE 
         elif item.visibility == Visibility.HIDDEN:
             return self.hidden_tests_setting
-
+        else:
+            return self.visibility
+    
+    def get_item_visibility_string(self, item: RubricItem) -> str:
+        vis = self.get_item_visibility(item)
+        return vis.value
 
     def format_item(self, item: RubricItem) -> dict:
         rubric_item = {
             "name": item.name,
             "score": item.score,
-            "visibility": self.get_visibility_setting(item),
+            "visibility": self.get_item_visibility_string(item),
         }
 
         if item.passed is not None:
@@ -136,16 +142,24 @@ class GradescopeRubricFormatter(RubricFormatter):
 
         return rubric_item
 
+    def get_total_score(self):
+        return sum(i.score for i in self.rubric.items)
+
+    def get_total_execution_time_ms(self):
+        sum = 0
+        for item in self.rubric.items:
+            if item.running_time_ms > 0:
+                sum += item.running_time_ms
+        return sum
+
     def as_dict(self):
-        total_score = sum(i.score for i in self.rubric.items)
-        total_time = sum(i.running_time_ms for i in self.rubric.items) / 1000
         tests = [self.format_item(i) for i in self.rubric.items]
         return {
-            "score": total_score,
-            "execution_time": total_time,
+            "score": self.get_total_score(),
+            "execution_time": self.get_total_execution_time_ms() / 1000,
             "output": self.message,
-            "visibility": self.visibility,
-            "stdout_visibility": self.stdout_visibility,
+            "visibility": self.visibility.value,
+            "stdout_visibility": self.stdout_visibility.value,
             "tests": tests,
         }
 

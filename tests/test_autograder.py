@@ -1,14 +1,15 @@
 import sys
 import os
-
-from datetime import datetime, timedelta
+import pprint
 
 # This is fairly janky, but it works.
 sys.path.append(
     os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src")
 )
 
-from tritongrader.autograder import Autograder # noqa
+from tritongrader.autograder import Autograder  # noqa
+from tritongrader.rubric import GradescopeRubricFormatter
+from tritongrader.visibility import GradescopeVisibility
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
@@ -37,11 +38,13 @@ if __name__ == "__main__":
             ("4", 4),
         ],
         prefix="Hidden Tests",
-        unhide_time=datetime.now() + timedelta(days=1),
     )
 
-    r = ag.execute()
+    formatter = GradescopeRubricFormatter(
+        ag.execute(),
+        message="tritongrader -- test",
+        hidden_tests_setting=GradescopeVisibility.AFTER_PUBLISHED,
+    )
 
-    import pprint
-
-    pprint.pprint(r)
+    pprint.pprint(formatter.as_dict())
+    formatter.export("./results.json")

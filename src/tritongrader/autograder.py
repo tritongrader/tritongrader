@@ -246,6 +246,7 @@ class Autograder:
                 output=test.generate_test_summary(verbose=self.verbose_rubric),
                 passed=test.result.passed,
                 visibility=test.visibility,
+                running_time_ms=test.result.running_time_ms,
             )
 
         logger.info(f"Finished running {self.name} test(s).")
