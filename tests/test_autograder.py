@@ -1,4 +1,6 @@
 # This is fairly janky, but it works.
+import os
+import sys
 sys.path.append(
     os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src")
 )
@@ -9,8 +11,6 @@ sys.path.append(
 # the library evolves.
 #
 
-import sys
-import os
 import pprint
 
 from tritongrader.autograder import Autograder  # noqa
