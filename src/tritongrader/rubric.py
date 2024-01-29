@@ -1,7 +1,8 @@
-import os
 import json
 import logging
 from typing import List, Optional
+
+from tritongrader.visibility import Visibility, GradescopeVisibility
 
 logger = logging.getLogger("tritongrader.rubric")
 
@@ -21,44 +22,21 @@ class RubricItem:
         # as possible. While each test should still be defined as
         # hidden or public, there should not be any additional
         # complexitiy here beyond that.
-        visibility: str = "visible",
+        visibility: Visibility = Visibility.VISIBLE,
     ):
-        assert visibility in [
-            Rubric.VIS_VISIBLE,
-            Rubric.VIS_AFT_DUE,
-            Rubric.VIS_AFT_PUBLISH,
-            Rubric.VIS_HIDDEN,
-        ]
         self.name: str = name
         self.output: str = output
         self.input: str = input
         self.score: int = score
         self.passed: bool = passed
-        self.visibility: str = visibility
+        self.visibility: Visibility = visibility
         self.max_score: Optional[int] = max_score
-
-    def as_dict(self):
-        rubric_item = {
-            "name": self.name,
-            "score": self.score,
-            "visibility": self.visibility,
-        }
-        if self.passed is not None:
-            rubric_item["status"] = "passed" if self.passed else "failed"
-        if self.output is not None:
-            rubric_item["output"] = self.output
-        if self.input is not None:
-            rubric_item["input"] = self.input
-        if self.max_score is not None:
-            rubric_item["max_score"] = self.max_score
-        return rubric_item
 
 
 class Rubric:
-    VIS_VISIBLE = "visible"
-    VIS_HIDDEN = "hidden"
-    VIS_AFT_DUE = "after_due_date"
-    VIS_AFT_PUBLISH = "after_published"
+    """
+    A Rubric object contains a collection of grading items.
+    """
 
     def __init__(self, name: str, hide_scores=False):
         self.name: str = name
@@ -78,7 +56,7 @@ class Rubric:
         score: int = 0,
         max_score: Optional[int] = None,
         passed: Optional[bool] = None,
-        visibility: str = VIS_VISIBLE,
+        visibility: Visibility = Visibility.VISIBLE,
     ):
         logger.info(
             f"Rubric: {self.name} - Adding rubric item {name} score={score} passed={passed}"
@@ -106,9 +84,9 @@ class Rubric:
 
 class RubricFormatter:
     def __init__(self, rubric: Rubric):
-        self.rubric = rubric
+        self.rubric: Rubric = rubric
 
-    def export(self, test=False):
+    def export(self, filepath=None):
         raise NotImplementedError
 
 
@@ -120,17 +98,31 @@ class GradescopeRubricFormatter(RubricFormatter):
 
     DEFAULT_RESULTS_PATH = "/autograder/results/results.json"
 
-    def __init__(self, message="", visibility="visible", stdout_visibility="visible"):
+    def __init__(
+        self,
+        message="",
+        visibility="visible",
+        stdout_visibility: GradescopeVisibility = GradescopeVisibility.HIDDEN,
+        hidden_tests_setting: GradescopeVisibility = GradescopeVisibility.HIDDEN,
+    ):
         super().__init__()
         self.message = message
-        self.visibility = visibility
-        self.stdout_visibility = stdout_visibility
+        self.visibility: Visibility = visibility
+        self.stdout_visibility: GradescopeVisibility = stdout_visibility
+        self.hidden_tests_setting: GradescopeVisibility = hidden_tests_setting
+    
+    def get_visibility_setting(self, item: RubricItem) -> str:
+        if item.visibility == Visibility.VISIBLE:
+            return "visible"
+        elif item.visibility == Visibility.HIDDEN:
+            return self.hidden_tests_setting
+
 
     def format_item(self, item: RubricItem) -> dict:
         rubric_item = {
             "name": item.name,
             "score": item.score,
-            "visibility": self.visibility,
+            "visibility": self.get_visibility_setting(item),
         }
 
         if item.passed is not None:
@@ -143,22 +135,23 @@ class GradescopeRubricFormatter(RubricFormatter):
             rubric_item["max_score"] = item.max_score
 
         return rubric_item
-    
-    def _get_dict(self):
+
+    def as_dict(self):
         total_score = sum(i.score for i in self.rubric.items)
+        total_time = sum(i.running_time_ms for i in self.rubric.items) / 1000
         tests = [self.format_item(i) for i in self.rubric.items]
         return {
-            "score": total_score, # TODO
-            "execution_time": 0, # TODO
+            "score": total_score,
+            "execution_time": total_time,
             "output": self.message,
             "visibility": self.visibility,
             "stdout_visibility": self.stdout_visibility,
-            "tests": tests
+            "tests": tests,
         }
 
     def export(self, filepath=DEFAULT_RESULTS_PATH):
         with open(filepath, "w+") as fp:
-            json.dump(self._get_dict(), fp)
+            json.dump(self.as_dict(), fp)
 
 
 class TextFormatter(RubricFormatter):

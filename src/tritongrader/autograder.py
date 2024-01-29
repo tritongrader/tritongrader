@@ -9,6 +9,7 @@ from typing import Tuple, List
 from tritongrader.utils import run
 from tritongrader.test_case import TestCase
 from tritongrader.rubric import Rubric
+from tritongrader.visibility import Visibility
 
 logger = logging.getLogger("tritongrader.autograder")
 
@@ -101,8 +102,7 @@ class Autograder:
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
-        hidden=False,
-        unhide_time=None,
+        visibility: Visibility = Visibility.VISIBLE,
     ):
         for test_id, point_value in test_list:
             test_case = TestCase(
@@ -115,8 +115,7 @@ class Autograder:
                 arm=self.arm,
                 point_value=point_value,
                 binary_io=binary_io,
-                hidden=hidden,
-                unhide_time=unhide_time,
+                visibility=visibility,
             )
             self.test_cases.append(test_case)
 
@@ -135,15 +134,13 @@ class Autograder:
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
-        unhide_time=None,
     ):
         self._add_tests(
             test_list,
             prefix,
             default_timeout_ms,
             binary_io,
-            hidden=True,
-            unhide_time=unhide_time,
+            visibility=Visibility.HIDDEN,
         )
 
     def check_missing_files(self):
@@ -226,7 +223,7 @@ class Autograder:
 
         return compiler_process.returncode
 
-    def execute(self):
+    def execute(self) -> Rubric:
         """Execute the autograder
 
         Returns: All rubric items
@@ -241,7 +238,6 @@ class Autograder:
         logger.info(f"Running {self.name} test(s)...")
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
-            vis = Rubric.VIS_AFT_PUBLISH if test.hide_results() else Rubric.VIS_VISIBLE
             test.execute()
             self.rubric.add_item(
                 name=f"{test.name}",
@@ -249,9 +245,9 @@ class Autograder:
                 max_score=test.result.score,
                 output=test.generate_test_summary(verbose=self.verbose_rubric),
                 passed=test.result.passed,
-                visibility=vis,
+                visibility=test.visibility,
             )
 
         logger.info(f"Finished running {self.name} test(s).")
 
-        return self.rubric.export()
+        return self.rubric

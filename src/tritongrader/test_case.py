@@ -8,6 +8,7 @@ import subprocess
 from datetime import datetime
 
 from tritongrader.utils import run, get_countable_unit_string
+from tritongrader.visibility import Visibility
 
 logger = logging.getLogger("tritongrader.test_case")
 
@@ -24,7 +25,7 @@ class TestCaseResult:
         self.stderr_binary: bytes = b""
         self.timed_out: bool = False
         self.error: bool = False
-        self.running_time: float = None
+        self.running_time_ms: float = None
         self.has_run: bool = False
 
 
@@ -43,8 +44,7 @@ class TestCase:
         timeout: float = DEFAULT_TIMEOUT_SECS,
         arm: bool = True,
         binary_io: bool = False,
-        hidden: bool = False,
-        unhide_time: datetime = None,
+        visibility: Visibility = Visibility.VISIBLE,
     ):
         self.arm: bool = arm
         self.binary_io: bool = binary_io
@@ -68,8 +68,7 @@ class TestCase:
         self.point_value: float = point_value
         self.timeout: float = timeout
 
-        self.hidden: bool = hidden
-        self.unhide_time: datetime = unhide_time
+        self.visibility: Visibility = visibility
 
         # run states
         self.result: TestCaseResult = TestCaseResult()
@@ -161,7 +160,7 @@ class TestCase:
                 arm=self.arm,
             )
             end_ts = time.time()
-            self.result.running_time = (end_ts - start_ts) * 1000
+            self.result.running_time_ms = (end_ts - start_ts) * 1000
             self.result.retcode = (
                 "EXIT_SUCCESS" if test.returncode == 0 else "EXIT_FAILURE"
             )
@@ -205,7 +204,7 @@ class TestCase:
             self.stringify_binary_io()
 
         status_str = "PASSED" if self.result.passed else "FAILED"
-        summary = f"{status_str} in {self.result.running_time:.2f} ms."
+        summary = f"{status_str} in {self.result.running_time_ms:.2f} ms."
         if verbose or not self.result.passed:
             summary += (
                 f"\n==Test command==\n{self.command}\n"
@@ -221,18 +220,6 @@ class TestCase:
             )
 
         return summary
-
-    def is_hidden_test(self):
-        return self.hidden
-
-    def hide_results(self):
-        if not self.hidden:
-            return False
-
-        if self.unhide_time is None:
-            return True
-        else:
-            return datetime.now(self.unhide_time.tzinfo) < self.unhide_time
 
     def generate_test_summary(self, verbose=False):
         return self._generate_summary(verbose)
