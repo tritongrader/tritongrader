@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 from typing import List, Optional
@@ -36,10 +37,9 @@ class Rubric:
     A Rubric object contains a collection of grading items.
     """
 
-    def __init__(self, name: str, hide_scores=False):
+    def __init__(self, name: str):
         self.name: str = name
         self.items: List[RubricItem] = []
-        self.hide_scores = hide_scores
         self._score_for_logging = 0
 
     def _add_item(self, item: RubricItem):
@@ -64,7 +64,7 @@ class Rubric:
             name=f"{self.name}: {name}",
             output=output,
             input=input,
-            score=score if not self.hide_scores else 0,
+            score=score,
             max_score=max_score,
             passed=passed,
             visibility=visibility,
@@ -164,6 +164,8 @@ class GradescopeRubricFormatter(RubricFormatter):
         }
 
     def export(self, filepath=DEFAULT_RESULTS_PATH):
+        filepath = os.path.realpath(filepath)
+        logging.info("Exporting gradescope rubric to " + filepath)
         with open(filepath, "w+") as fp:
             json.dump(self.as_dict(), fp)
 

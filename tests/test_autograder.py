@@ -8,8 +8,8 @@ sys.path.append(
 )
 
 from tritongrader.autograder import Autograder  # noqa
-from tritongrader.rubric import GradescopeRubricFormatter
-from tritongrader.visibility import GradescopeVisibility
+from tritongrader.rubric import GradescopeRubricFormatter  # noqa
+from tritongrader.visibility import GradescopeVisibility  # noqa
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
@@ -47,4 +47,4 @@ if __name__ == "__main__":
     )
 
     pprint.pprint(formatter.as_dict())
-    formatter.export("./results.json")
+    # formatter.export("./results.json")

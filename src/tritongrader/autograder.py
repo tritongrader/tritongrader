@@ -38,7 +38,6 @@ class Autograder:
         name: str,
         submission_path: str,
         tests_path: str,
-        hide_scores: bool = True,
         required_files: List[str] = [],
         supplied_files: List[str] = [],
         verbose_rubric: bool = False,
@@ -51,7 +50,6 @@ class Autograder:
 
         Args:
             name (str, optional): name of this autograder. Defaults to "".
-            hide_scores (bool, optional): if final scores should be hidden. Defaults to True.
             required_files (List[str], optional): submission files required by this autograder. Defaults to [].
             supplied_files (List[str], optional): files supplied by the autograder solution. Defaults to [].
             solution_dirname (str, optional): directory containing solution files and test files. Defaults to "".
@@ -60,7 +58,6 @@ class Autograder:
         self.name = name
 
         self.arm = arm
-        self.hide_scores = hide_scores
         self.required_files = required_files
         self.supplied_files = supplied_files
         self.verbose_rubric = verbose_rubric
@@ -71,7 +68,7 @@ class Autograder:
 
         self.test_cases: List[TestCase] = []
 
-        self.rubric = Rubric(self.name, self.hide_scores)
+        self.rubric = Rubric(self.name)
 
         #
         # set up paths
@@ -224,10 +221,8 @@ class Autograder:
         return compiler_process.returncode
 
     def execute(self) -> Rubric:
-        """Execute the autograder
+        cwd = os.getcwd()
 
-        Returns: All rubric items
-        """
         logger.info(f"{self.name} starting...")
         logger.debug(platform.uname())
         self.check_missing_files()
@@ -235,20 +230,21 @@ class Autograder:
         if self.compile_student_code() != 0:
             logger.info(f"Skipping {self.name} test(s) due to failed compilation.")
 
-        logger.info(f"Running {self.name} test(s)...")
+        logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
             test.execute()
             self.rubric.add_item(
                 name=f"{test.name}",
                 score=test.result.score,
-                max_score=test.result.score,
+                max_score=test.point_value,
                 output=test.generate_test_summary(verbose=self.verbose_rubric),
                 passed=test.result.passed,
                 visibility=test.visibility,
                 running_time_ms=test.result.running_time_ms,
             )
 
-        logger.info(f"Finished running {self.name} test(s).")
+        logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
+        os.chdir(cwd)
 
         return self.rubric
