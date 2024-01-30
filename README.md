@@ -10,7 +10,7 @@ For now, the project is not hosted on PyPI. To install the library,
 use `pip install` directly from this repository.
 
 ```bash
-pip install git+https://github.com/jyu283/gradescope.py.git
+pip install git+https://github.com/jyu283/tritongrader.git
 ```
 
 See more detailed instructions for installation via `pip` [here][1].
