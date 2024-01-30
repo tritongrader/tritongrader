@@ -1,7 +1,7 @@
 from typing import List, Optional
 import logging
 
-from helper_methods import *
+logger = logging.getLogger("tritongrader.rubric")
 
 
 class RubricItem:
@@ -68,7 +68,7 @@ class Rubric:
         passed: Optional[bool] = None,
         visibility: str = VIS_VISIBLE,
     ):
-        logging.info(
+        logger.info(
             f"Rubric: {self.name} - Adding rubric item {name=} {score=} {passed=}"
         )
         self.rubric_items.append(
@@ -85,5 +85,5 @@ class Rubric:
         self._score_for_logging += score
 
     def export(self):
-        logging.info(f"Rubric: {self.name} - Total score: {self._score_for_logging}")
+        logger.info(f"Rubric: {self.name} - Total score: {self._score_for_logging}")
         return [ri.as_dict() for ri in self.rubric_items]

@@ -1,0 +1,1 @@
+Run `python -m test.test_autograder` from the root directory. 

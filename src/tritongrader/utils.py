@@ -30,7 +30,7 @@ def run(
     arm=False,
 ):
     if arm:
-        command = "qemu-arm -L /usr/arm-linux-gnueabi/ " + command
+        command = "qemu-arm -L /usr/arm-linux-gnueabihf/ " + command
     sp = subprocess.run(
         command,
         shell=True,

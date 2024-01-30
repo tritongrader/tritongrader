@@ -1,9 +1,15 @@
+import os
 import time
 import traceback
 import binascii
 import logging
+import subprocess
 
-from helper_methods import *
+from datetime import datetime
+
+from tritongrader.utils import run, get_countable_unit_string
+
+logger = logging.getLogger("tritongrader.test_case")
 
 
 class TestCaseResult:
@@ -28,7 +34,6 @@ class TestCase:
 
     def __init__(
         self,
-        suite,
         command_path: str,
         input_path: str,
         exp_stdout_path: str,
@@ -38,8 +43,9 @@ class TestCase:
         timeout: float = DEFAULT_TIMEOUT_SECS,
         arm: bool = True,
         binary_io: bool = False,
+        hidden: bool = False,
+        unhide_time: datetime = None,
     ):
-        self.suite = suite
         self.arm: bool = arm
         self.binary_io: bool = binary_io
 
@@ -61,6 +67,9 @@ class TestCase:
         self.name: str = name
         self.point_value: float = point_value
         self.timeout: float = timeout
+
+        self.hidden: bool = hidden
+        self.unhide_time: datetime = unhide_time
 
         # run states
         self.result: TestCaseResult = TestCaseResult()
@@ -85,7 +94,7 @@ class TestCase:
         """Attempt to convert binary I/O products to Unicode. Fallback to hexdumps."""
         try:
             return binary.decode()
-        except:
+        except Exception:
             return binascii.hexlify(binary, " ", -2).decode()
 
     def stringify_binary_io(self):
@@ -126,7 +135,7 @@ class TestCase:
     def get_execute_command(self):
         self.command = self.extract_command_from_bash_file(self.command_path)
         self.read_test_input(self.input_path)
-        logging.info(f"Running {str(self)}")
+        logger.info(f"Running {str(self)}")
         # if running in an ARM simulator, we cannot use the bash script
         # and must instead use the command inside directly.
         exe = self.command if self.arm else self.command_path
@@ -168,10 +177,10 @@ class TestCase:
             self.result.passed = stderr_ok and stdout_ok
             self.result.score = self.point_value if self.result.passed else 0
         except subprocess.TimeoutExpired:
-            logging.info(f"{self.name} timed out (limit={self.timeout}s)!")
+            logger.info(f"{self.name} timed out (limit={self.timeout}s)!")
             self.result.timed_out = True
         except Exception as e:
-            logging.info(f"{self.name} raised unexpected exception!\n{str(e)}")
+            logger.info(f"{self.name} raised unexpected exception!\n{str(e)}")
             traceback.print_exc()
             self.result.error = True
 
@@ -214,10 +223,16 @@ class TestCase:
         return summary
 
     def is_hidden_test(self):
-        return self.suite.is_hidden_suite()
+        return self.hidden
 
     def hide_results(self):
-        return self.suite.hide_results()
+        if not self.hidden:
+            return False
+
+        if self.unhide_time is None:
+            return True
+        else:
+            return datetime.now(self.unhide_time.tzinfo) < self.unhide_time
 
     def generate_test_summary(self, verbose=False):
         return self._generate_summary(verbose)
