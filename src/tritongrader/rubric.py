@@ -167,7 +167,7 @@ class GradescopeRubricFormatter(RubricFormatter):
         filepath = os.path.realpath(filepath)
         logging.info("Exporting gradescope rubric to " + filepath)
         with open(filepath, "w+") as fp:
-            json.dump(self.as_dict(), fp)
+            json.dump(self.as_dict(), fp, indent=2)
 
 
 class TextFormatter(RubricFormatter):
