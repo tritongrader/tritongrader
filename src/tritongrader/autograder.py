@@ -237,7 +237,7 @@ class Autograder:
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
             test.execute()
-            test.add_to_rubric()
+            test.add_to_rubric(self.rubric, self.verbose_rubric)
 
         logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
         os.chdir(cwd)

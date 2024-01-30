@@ -266,7 +266,7 @@ class CustomTestCaseResult(TestCaseResultBase):
 class CustomTestCase(TestCaseBase):
     def __init__(
         self,
-        func: Callable[[], CustomTestCaseResult],
+        func: Callable[[CustomTestCaseResult], None],
         name: str = "Test Case",
         point_value: float = 1,
         timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
