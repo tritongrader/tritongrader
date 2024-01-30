@@ -53,4 +53,4 @@ if __name__ == "__main__":
     )
 
     pprint.pprint(formatter.as_dict())
-    # formatter.export("./results.json")
+    formatter.export(f"{example_dir}/results.json")
