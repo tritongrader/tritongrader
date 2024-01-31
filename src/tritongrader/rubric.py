@@ -148,7 +148,7 @@ class GradescopeRubricFormatter(RubricFormatter):
     def get_total_execution_time_ms(self):
         sum = 0
         for item in self.rubric.items:
-            if item.running_time_ms > 0:
+            if item.running_time_ms:
                 sum += item.running_time_ms
         return sum
 

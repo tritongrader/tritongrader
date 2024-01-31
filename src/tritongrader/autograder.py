@@ -7,7 +7,7 @@ from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
 from tritongrader.utils import run
-from tritongrader.test_case import TestCase
+from tritongrader.test_case import TestCaseBase, IOTestCase
 from tritongrader.rubric import Rubric
 from tritongrader.visibility import Visibility
 
@@ -66,7 +66,7 @@ class Autograder:
         self.build_command = build_command
         self.compiled = False
 
-        self.test_cases: List[TestCase] = []
+        self.test_cases: List[TestCaseBase] = []
 
         self.rubric = Rubric(self.name)
 
@@ -93,10 +93,10 @@ class Autograder:
         shutil.copytree(submission_path, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
-    def add_test(self, test_case: TestCase):
+    def add_test(self, test_case: TestCaseBase):
         self.test_cases.append(test_case)
 
-    def _add_tests(
+    def _add_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
@@ -105,7 +105,7 @@ class Autograder:
         visibility: Visibility = Visibility.VISIBLE,
     ):
         for test_id, point_value in test_list:
-            test_case = TestCase(
+            test_case = IOTestCase(
                 command_path=f"{self.tests_in_path}/cmd{test_id}",
                 input_path=f"{self.tests_in_path}/test{test_id}",
                 exp_stdout_path=f"{self.tests_exp_path}/out{test_id}",
@@ -119,23 +119,23 @@ class Autograder:
             )
             self.add_test(test_case)
     
-    def create_public_tests(
+    def create_public_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
     ):
-        self._add_tests(test_list, prefix, default_timeout_ms, binary_io, False)
+        self._add_io_tests(test_list, prefix, default_timeout_ms, binary_io, False)
 
-    def create_private_tests(
+    def create_private_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
     ):
-        self._add_tests(
+        self._add_io_tests(
             test_list,
             prefix,
             default_timeout_ms,
@@ -237,15 +237,7 @@ class Autograder:
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
             test.execute()
-            self.rubric.add_item(
-                name=f"{test.name}",
-                score=test.result.score,
-                max_score=test.point_value,
-                output=test.generate_test_summary(verbose=self.verbose_rubric),
-                passed=test.result.passed,
-                visibility=test.visibility,
-                running_time_ms=test.result.running_time_ms,
-            )
+            test.add_to_rubric(self.rubric, self.verbose_rubric)
 
         logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
         os.chdir(cwd)
