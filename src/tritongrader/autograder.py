@@ -7,8 +7,9 @@ from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
 from tritongrader.utils import run
-from tritongrader.test_case import TestCase
+from tritongrader.test_case import TestCaseBase, IOTestCase
 from tritongrader.rubric import Rubric
+from tritongrader.visibility import Visibility
 
 logger = logging.getLogger("tritongrader.autograder")
 
@@ -37,7 +38,6 @@ class Autograder:
         name: str,
         submission_path: str,
         tests_path: str,
-        hide_scores: bool = True,
         required_files: List[str] = [],
         supplied_files: List[str] = [],
         verbose_rubric: bool = False,
@@ -50,7 +50,6 @@ class Autograder:
 
         Args:
             name (str, optional): name of this autograder. Defaults to "".
-            hide_scores (bool, optional): if final scores should be hidden. Defaults to True.
             required_files (List[str], optional): submission files required by this autograder. Defaults to [].
             supplied_files (List[str], optional): files supplied by the autograder solution. Defaults to [].
             solution_dirname (str, optional): directory containing solution files and test files. Defaults to "".
@@ -59,7 +58,6 @@ class Autograder:
         self.name = name
 
         self.arm = arm
-        self.hide_scores = hide_scores
         self.required_files = required_files
         self.supplied_files = supplied_files
         self.verbose_rubric = verbose_rubric
@@ -68,9 +66,9 @@ class Autograder:
         self.build_command = build_command
         self.compiled = False
 
-        self.test_cases: List[TestCase] = []
+        self.test_cases: List[TestCaseBase] = []
 
-        self.rubric = Rubric(self.name, self.hide_scores)
+        self.rubric = Rubric(self.name)
 
         #
         # set up paths
@@ -95,17 +93,19 @@ class Autograder:
         shutil.copytree(submission_path, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
-    def _add_tests(
+    def add_test(self, test_case: TestCaseBase):
+        self.test_cases.append(test_case)
+
+    def _add_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
-        hidden=False,
-        unhide_time=None,
+        visibility: Visibility = Visibility.VISIBLE,
     ):
         for test_id, point_value in test_list:
-            test_case = TestCase(
+            test_case = IOTestCase(
                 command_path=f"{self.tests_in_path}/cmd{test_id}",
                 input_path=f"{self.tests_in_path}/test{test_id}",
                 exp_stdout_path=f"{self.tests_exp_path}/out{test_id}",
@@ -115,35 +115,32 @@ class Autograder:
                 arm=self.arm,
                 point_value=point_value,
                 binary_io=binary_io,
-                hidden=hidden,
-                unhide_time=unhide_time,
+                visibility=visibility,
             )
-            self.test_cases.append(test_case)
-
-    def add_public_tests(
+            self.add_test(test_case)
+    
+    def create_public_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
     ):
-        self._add_tests(test_list, prefix, default_timeout_ms, binary_io, False)
+        self._add_io_tests(test_list, prefix, default_timeout_ms, binary_io, False)
 
-    def add_private_tests(
+    def create_private_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
-        unhide_time=None,
     ):
-        self._add_tests(
+        self._add_io_tests(
             test_list,
             prefix,
             default_timeout_ms,
             binary_io,
-            hidden=True,
-            unhide_time=unhide_time,
+            visibility=Visibility.HIDDEN,
         )
 
     def check_missing_files(self):
@@ -226,11 +223,9 @@ class Autograder:
 
         return compiler_process.returncode
 
-    def execute(self):
-        """Execute the autograder
+    def execute(self) -> Rubric:
+        cwd = os.getcwd()
 
-        Returns: All rubric items
-        """
         logger.info(f"{self.name} starting...")
         logger.debug(platform.uname())
         self.check_missing_files()
@@ -238,20 +233,13 @@ class Autograder:
         if self.compile_student_code() != 0:
             logger.info(f"Skipping {self.name} test(s) due to failed compilation.")
 
-        logger.info(f"Running {self.name} test(s)...")
+        logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
-            vis = Rubric.VIS_AFT_PUBLISH if test.hide_results() else Rubric.VIS_VISIBLE
             test.execute()
-            self.rubric.add_item(
-                name=f"{test.name}",
-                score=test.result.score,
-                max_score=test.result.score,
-                output=test.generate_test_summary(verbose=self.verbose_rubric),
-                passed=test.result.passed,
-                visibility=vis,
-            )
+            test.add_to_rubric(self.rubric, self.verbose_rubric)
 
-        logger.info(f"Finished running {self.name} test(s).")
+        logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
+        os.chdir(cwd)
 
-        return self.rubric.export()
+        return self.rubric
