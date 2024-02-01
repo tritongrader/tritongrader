@@ -24,9 +24,8 @@ def run(
     sp = subprocess.run(
         command,
         shell=True,
-        stdout=subprocess.PIPE if capture_output or print_output else None,
-        stderr=subprocess.PIPE if capture_output or print_output else None,
-        universal_newlines=text or print_output,
+        capture_output=capture_output or print_output,
+        text=text or print_output,
         timeout=timeout,
     )
     if print_command:
