@@ -96,8 +96,8 @@ class IOTestCase(TestCaseBase):
 
     def __str__(self):
         return (
-            f"{self.name} {self.arm=} {self.command_path=} {self.command=} "
-            + f"{self.input_path=} {self.exp_stdout_path=} {self.exp_stderr_path}"
+            f"{self.name} arm={self.arm} cmd_path={self.command_path} cmd={self.command} "
+            + f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
         )
 
     def open_mode(self):

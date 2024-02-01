@@ -194,7 +194,7 @@ class Autograder:
         self.copy_supplied_files()
         os.chdir(self.sandbox.name)
         build_cmd = self.get_build_command()
-        logger.debug(f"{build_cmd=}")
+        logger.debug(f"build_cmd: {build_cmd}")
         compiler_process = run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
         if compiled:
