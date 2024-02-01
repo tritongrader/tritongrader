@@ -6,7 +6,8 @@ import platform
 from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
-from tritongrader.utils import run
+from tritongrader import utils
+
 from tritongrader.test_case import TestCaseBase, IOTestCase
 from tritongrader.rubric import Rubric
 from tritongrader.visibility import Visibility
@@ -199,7 +200,7 @@ class Autograder:
 
         build_cmd = self.get_build_command()
         logger.debug(f"build_cmd: {build_cmd}")
-        compiler_process = run(build_cmd, capture_output=True, text=True)
+        compiler_process = utils.run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
         if compiled:
             logger.info("Student code compiled successfully.")

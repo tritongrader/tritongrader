@@ -8,7 +8,7 @@ import threading
 
 from typing import Callable
 
-from tritongrader.utils import run, get_countable_unit_string
+from tritongrader import utils
 from tritongrader.visibility import Visibility
 from tritongrader.rubric import Rubric
 
@@ -172,7 +172,7 @@ class IOTestCase(TestCaseBase):
         try:
             exe_cmd = self.get_execute_command()
             start_ts = time.time()
-            test = run(
+            test = utils.run(
                 exe_cmd,
                 capture_output=True,
                 print_command=True,
@@ -216,7 +216,7 @@ class IOTestCase(TestCaseBase):
         )
 
     def get_point_value_string(self):
-        return get_countable_unit_string(self.point_value, "point")
+        return utils.get_countable_unit_string(self.point_value, "point")
 
     def _generate_summary(self, verbose=False):
         if not self.result.has_run:
