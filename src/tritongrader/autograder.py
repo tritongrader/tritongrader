@@ -82,15 +82,12 @@ class Autograder:
         self.tests_exp_path = f"{self.tests_path}/exp"
         # path to the directory containing student submission files.
         self.submission_path = submission_path
-        # Copy submission files to separate sandbox folder for testing
-        self.sandbox: TemporaryDirectory = self.create_sandbox_directory(
-            self.submission_path
-        )
+        # A sandbox directory where submission and test files will be copied to.
+        self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
 
-    def create_sandbox_directory(self, submission_path: str) -> str:
+    def create_sandbox_directory(self) -> str:
         tmpdir = TemporaryDirectory(prefix="Autograder_")
         logger.info(f"Sandbox created at {tmpdir.name}")
-        shutil.copytree(submission_path, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
     def add_test(self, test_case: TestCaseBase):
@@ -172,6 +169,11 @@ class Autograder:
             if self.build_command is not None
             else self.get_default_build_command()
         )
+    
+    def copy_submission_files(self):
+        for f in self.required_files:
+            logger.info(f"Copying {f} to sandbox directory...")
+            shutil.copyfile(f"{self.submission_path}/{f}", f"{self.sandbox.name}/{f}")
 
     def copy_supplied_files(self):
         for f in self.supplied_files:
@@ -184,6 +186,7 @@ class Autograder:
             else:
                 parent_dir = self.sandbox.name
                 filename = tokens[0]
+            shutil.copyfile(f"{self.tests_path}/{f}", f"{parent_dir}/{filename}")
             run(f"cp {self.tests_path}/{f} {parent_dir}/{filename}")
 
     def compile_student_code(self) -> int:
@@ -191,8 +194,12 @@ class Autograder:
             return 0
 
         logger.info(f"Compiling student code (arm={self.arm})...")
+
+        self.copy_submission_files()
         self.copy_supplied_files()
+
         os.chdir(self.sandbox.name)
+
         build_cmd = self.get_build_command()
         logger.debug(f"build_cmd: {build_cmd}")
         compiler_process = run(build_cmd, capture_output=True, text=True)
