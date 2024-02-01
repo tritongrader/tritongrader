@@ -80,6 +80,7 @@ class Rubric:
 		rubric = Rubric(name=self.name + ", " + other.name)
 		for ri in self.items + other.items:
 			rubric._add_item(ri)
+		return rubric
 
 
 class RubricFormatter:
