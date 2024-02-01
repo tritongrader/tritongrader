@@ -11,6 +11,7 @@ logger = logging.getLogger("tritongrader.rubric")
 
 
 class RubricItem:
+
     def __init__(
         self,
         name: str,
@@ -73,16 +74,18 @@ class Rubric:
         self._add_item(rubric_item)
 
     def export(self):
-        logger.info(f"Rubric: {self.name} - Total score: {self._score_for_logging}")
+        logger.info(
+            f"Rubric: {self.name} - Total score: {self._score_for_logging}")
         return [ri.as_dict() for ri in self.items]
 
     def __add__(self, other):
         rubric = Rubric(name=self.name + ", " + other.name)
-        for ri in self.items + other.rubric_items:
+        for ri in self.items + other.items:
             rubric._add_item(ri)
 
 
 class RubricFormatter:
+
     def __init__(self, rubric: Rubric):
         self.rubric: Rubric = rubric
 
@@ -104,7 +107,8 @@ class GradescopeRubricFormatter(RubricFormatter):
         message="",
         visibility: GradescopeVisibility = GradescopeVisibility.VISIBLE,
         stdout_visibility: GradescopeVisibility = GradescopeVisibility.HIDDEN,
-        hidden_tests_setting: GradescopeVisibility = GradescopeVisibility.HIDDEN,
+        hidden_tests_setting: GradescopeVisibility = GradescopeVisibility.
+        HIDDEN,
     ):
         super().__init__(rubric)
         self.message = message
@@ -114,12 +118,12 @@ class GradescopeRubricFormatter(RubricFormatter):
 
     def get_item_visibility(self, item: RubricItem) -> GradescopeVisibility:
         if item.visibility == Visibility.VISIBLE:
-            return GradescopeVisibility.VISIBLE 
+            return GradescopeVisibility.VISIBLE
         elif item.visibility == Visibility.HIDDEN:
             return self.hidden_tests_setting
         else:
             return self.visibility
-    
+
     def get_item_visibility_string(self, item: RubricItem) -> str:
         vis = self.get_item_visibility(item)
         return vis.value
@@ -171,6 +175,7 @@ class GradescopeRubricFormatter(RubricFormatter):
 
 
 class TextFormatter(RubricFormatter):
+
     def export(self):
         pass
 
