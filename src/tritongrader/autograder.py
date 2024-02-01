@@ -77,9 +77,9 @@ class Autograder:
         # path to solution directory as specified in docstring
         self.tests_path = tests_path
         # path to the in/ directory containing cmdX and testX files.
-        self.tests_in_path = f"{self.tests_path}/in"
+        self.tests_in_path = os.path.join(self.tests_path, "in")
         # path to the exp/ directory containing errX and outX files.
-        self.tests_exp_path = f"{self.tests_path}/exp"
+        self.tests_exp_path = os.path.join(self.tests_path, "exp") 
         # path to the directory containing student submission files.
         self.submission_path = submission_path
         # A sandbox directory where submission and test files will be copied to.
@@ -103,10 +103,10 @@ class Autograder:
     ):
         for test_id, point_value in test_list:
             test_case = IOTestCase(
-                command_path=f"{self.tests_in_path}/cmd{test_id}",
-                input_path=f"{self.tests_in_path}/test{test_id}",
-                exp_stdout_path=f"{self.tests_exp_path}/out{test_id}",
-                exp_stderr_path=f"{self.tests_exp_path}/err{test_id}",
+                command_path=os.path.join(self.tests_in_path, f"cmd{test_id}"),
+                input_path=os.path.join(self.tests_in_path, f"test{test_id}"),
+                exp_stdout_path=os.path.join(self.tests_exp_path, f"out{test_id}"),
+                exp_stderr_path=os.path.join(self.tests_exp_path, f"err{test_id}"),
                 name=str(test_id) if not prefix else f"{prefix} - {test_id}",
                 timeout=default_timeout_ms / 1000,
                 arm=self.arm,
@@ -170,24 +170,21 @@ class Autograder:
             else self.get_default_build_command()
         )
     
+    def copy2sandbox(self, src_dir, item):
+        path = os.path.realpath(os.path.join(src_dir, item))
+        dst = os.path.join(self.sandbox.name, item)
+        if os.path.isfile(path):
+            shutil.copy2(path, dst)
+        elif os.path.isdir(path):
+            shutil.copytree(path, dst)
+    
     def copy_submission_files(self):
         for f in self.required_files:
-            logger.info(f"Copying {f} to sandbox directory...")
-            shutil.copyfile(f"{self.submission_path}/{f}", f"{self.sandbox.name}/{f}")
+            self.copy2sandbox(self.submission_path, f)
 
     def copy_supplied_files(self):
         for f in self.supplied_files:
-            # create directories if supplied files are paths (e.g. "in/BOOK")
-            tokens = f.rsplit("/", 1)
-            if len(tokens) == 2:
-                parent_dir = self.sandbox.name + "/" + tokens[0]
-                filename = tokens[1]
-                run(f"mkdir -p {parent_dir}")
-            else:
-                parent_dir = self.sandbox.name
-                filename = tokens[0]
-            shutil.copyfile(f"{self.tests_path}/{f}", f"{parent_dir}/{filename}")
-            run(f"cp {self.tests_path}/{f} {parent_dir}/{filename}")
+            self.copy2sandbox(self.tests_path, f)
 
     def compile_student_code(self) -> int:
         if self.compiled:
