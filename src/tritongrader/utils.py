@@ -10,16 +10,6 @@ def get_countable_unit_string(count: int, unit: str):
     return ret
 
 
-def output_score(total_score):
-    if os.path.isdir("/autograder/results"):
-        resultsjson = open("/autograder/results/results.json", "w")
-        resultsjson.write(json.dumps(total_score))
-        resultsjson.close()
-    else:
-        print("local test")
-        print(json.dumps(total_score, indent=4, sort_keys=True))
-
-
 def run(
     command,
     capture_output=False,
