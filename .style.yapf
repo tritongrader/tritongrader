@@ -1,0 +1,5 @@
+[style]
+based_on_style = pep8
+USE_TABS = true
+COLUMN_LIMIT = 100
+CONTINUATION_ALIGN_STYLE = FIXED
