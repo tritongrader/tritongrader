@@ -57,6 +57,9 @@ class Autograder:
         """
         self.name = name
 
+        self.tests_path = tests_path
+        self.submission_path = submission_path
+
         self.arm = arm
         self.required_files = required_files
         self.supplied_files = supplied_files
@@ -70,14 +73,6 @@ class Autograder:
 
         self.rubric = Rubric(self.name)
 
-        #
-        # set up paths
-        #
-
-        # path to solution directory as specified in docstring
-        self.tests_path = tests_path
-        # path to the directory containing student submission files.
-        self.submission_path = submission_path
         # A sandbox directory where submission and test files will be copied to.
         self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
 
