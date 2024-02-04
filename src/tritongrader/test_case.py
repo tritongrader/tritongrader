@@ -324,7 +324,7 @@ class IOTestCaseBulkLoader:
         default_timeout_ms: float = 500,
         binary_io: bool = False,
     ):
-        self.autograder: Autograder = autograder
+        self.autograder = autograder
         self.commands_path = commands_path
         self.test_input_path = test_input_path
         self.expected_stdout_path = expected_stdout_path
