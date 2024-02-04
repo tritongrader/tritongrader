@@ -4,7 +4,7 @@ import shutil
 import platform
 
 from tempfile import TemporaryDirectory
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 from tritongrader.utils import run
 from tritongrader.test_case import TestCaseBase, IOTestCase
@@ -12,6 +12,7 @@ from tritongrader.rubric import Rubric
 from tritongrader.visibility import Visibility
 
 logger = logging.getLogger("tritongrader.autograder")
+
 
 class Autograder:
     """
@@ -79,7 +80,7 @@ class Autograder:
         # path to the in/ directory containing cmdX and testX files.
         self.tests_in_path = os.path.join(self.tests_path, "in")
         # path to the exp/ directory containing errX and outX files.
-        self.tests_exp_path = os.path.join(self.tests_path, "exp") 
+        self.tests_exp_path = os.path.join(self.tests_path, "exp")
         # path to the directory containing student submission files.
         self.submission_path = submission_path
         # A sandbox directory where submission and test files will be copied to.
@@ -93,52 +94,53 @@ class Autograder:
     def add_test(self, test_case: TestCaseBase):
         self.test_cases.append(test_case)
 
-    def _add_io_tests(
+    def bulk_load_io_tests(
         self,
-        test_list: List[Tuple[str, int]],
-        prefix="",
-        default_timeout_ms=500,
-        binary_io=False,
+        test_list: List[Tuple[str, float]],
+        prefix: str = "",
+        default_timeout_ms: float = 500,
+        binary_io: bool = False,
         visibility: Visibility = Visibility.VISIBLE,
+        commands_path: Optional[str] = None,
+        test_input_path: Optional[str] = None,
+        expected_stdout_path: Optional[str] = None,
+        expected_stderr_path: Optional[str] = None,
+        commands_prefix: Optional[str] = "cmd-",
+        test_input_prefix: Optional[str] = "test-",
+        expected_stdout_prefix: Optional[str] = "out-",
+        expected_stderr_prefix: Optional[str] = "err-",
     ):
-        for test_id, point_value in test_list:
-            test_case = IOTestCase(
-                command_path=os.path.join(self.tests_in_path, f"cmd{test_id}"),
-                input_path=os.path.join(self.tests_in_path, f"test{test_id}"),
-                exp_stdout_path=os.path.join(self.tests_exp_path, f"out{test_id}"),
-                exp_stderr_path=os.path.join(self.tests_exp_path, f"err{test_id}"),
-                name=str(test_id) if not prefix else f"{prefix} - {test_id}",
-                timeout=default_timeout_ms / 1000,
-                arm=self.arm,
-                point_value=point_value,
-                binary_io=binary_io,
-                visibility=visibility,
-            )
-            self.add_test(test_case)
-    
-    def create_public_io_tests(
-        self,
-        test_list: List[Tuple[str, int]],
-        prefix="",
-        default_timeout_ms=500,
-        binary_io=False,
-    ):
-        self._add_io_tests(test_list, prefix, default_timeout_ms, binary_io, False)
+        if not commands_path:
+            commands_path = os.path.join(self.tests_path, "cmd")
+        if not test_input_path:
+            test_input_path = os.path.join(self.tests_path, "in")
+        if not expected_stdout_path:
+            expected_stdout_path = os.path.join(self.tests_path, "exp")
+        if not expected_stderr_path:
+            expected_stderr_path = os.path.join(self.tests_path, "exp")
 
-    def create_private_io_tests(
-        self,
-        test_list: List[Tuple[str, int]],
-        prefix="",
-        default_timeout_ms=500,
-        binary_io=False,
-    ):
-        self._add_io_tests(
-            test_list,
-            prefix,
-            default_timeout_ms,
-            binary_io,
-            visibility=Visibility.HIDDEN,
-        )
+        for name, point_value in test_list:
+            self.add_test(
+                IOTestCase(
+                    name=name if not prefix else f"{prefix}{name}",
+                    point_value=point_value,
+                    command_path=os.path.join(
+                        commands_path, f"{commands_prefix}{name}"
+                    ),
+                    input_path=os.path.join(
+                        test_input_path, f"{test_input_prefix}{name}"
+                    ),
+                    exp_stdout_path=os.path.join(
+                        expected_stdout_path, f"{expected_stdout_prefix}{name}"
+                    ),
+                    exp_stderr_path=os.path.join(
+                        expected_stderr_path, f"{expected_stderr_prefix}{name}"
+                    ),
+                    timeout=default_timeout_ms,
+                    binary_io=binary_io,
+                    visibility=visibility,
+                )
+            )
 
     def check_missing_files(self):
         logger.info("Checking missing files...")
@@ -169,7 +171,7 @@ class Autograder:
             if self.build_command is not None
             else self.get_default_build_command()
         )
-    
+
     def copy2sandbox(self, src_dir, item):
         path = os.path.realpath(os.path.join(src_dir, item))
         dst = os.path.join(self.sandbox.name, item)
@@ -179,7 +181,7 @@ class Autograder:
         elif os.path.isdir(path):
             shutil.copytree(path, dst)
             logger.info(f"Copied directory from {path} to {dst}...")
-    
+
     def copy_submission_files(self):
         for f in self.required_files:
             self.copy2sandbox(self.submission_path, f)
