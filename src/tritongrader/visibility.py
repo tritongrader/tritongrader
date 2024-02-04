@@ -1,8 +1,4 @@
-from enum import Enum, auto
-
-class Visibility(Enum):
-    HIDDEN = "hidden"
-    VISIBLE = "visible"
+from enum import Enum
 
 class GradescopeVisibility(Enum):
     HIDDEN = "hidden"

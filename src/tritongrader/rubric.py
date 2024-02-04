@@ -3,7 +3,7 @@ import json
 import logging
 from typing import List, Optional
 
-from tritongrader.visibility import Visibility, GradescopeVisibility
+from tritongrader.visibility import GradescopeVisibility
 
 logger = logging.getLogger("tritongrader.rubric")
 
@@ -20,7 +20,7 @@ class RubricItem:
 		score: int = 0,
 		max_score: Optional[int] = None,
 		passed: Optional[bool] = None,
-		visibility: Visibility = Visibility.VISIBLE,
+		hidden: bool = False,
 		running_time_ms: int = -1,
 	):
 		self.name: str = name
@@ -28,7 +28,7 @@ class RubricItem:
 		self.input: str = input
 		self.score: int = score
 		self.passed: bool = passed
-		self.visibility: Visibility = visibility
+		self.hidden: bool = hidden
 		self.max_score: Optional[int] = max_score
 		self.running_time_ms: int = running_time_ms
 
@@ -55,7 +55,7 @@ class Rubric:
 		score: int = 0,
 		max_score: Optional[int] = None,
 		passed: Optional[bool] = None,
-		visibility: Visibility = Visibility.VISIBLE,
+		hidden: bool = False,
 		running_time_ms: int = -1,
 	):
 		logger.info(
@@ -67,7 +67,7 @@ class Rubric:
 			score=score,
 			max_score=max_score,
 			passed=passed,
-			visibility=visibility,
+			hidden=hidden,
 			running_time_ms=running_time_ms,
 		)
 		self._add_item(rubric_item)
@@ -114,23 +114,17 @@ class GradescopeRubricFormatter(RubricFormatter):
 		self.stdout_visibility: GradescopeVisibility = stdout_visibility
 		self.hidden_tests_setting: GradescopeVisibility = hidden_tests_setting
 
-	def get_item_visibility(self, item: RubricItem) -> GradescopeVisibility:
-		if item.visibility == Visibility.VISIBLE:
-			return GradescopeVisibility.VISIBLE
-		elif item.visibility == Visibility.HIDDEN:
-			return self.hidden_tests_setting
+	def get_item_visibility_value(self, item: RubricItem) -> GradescopeVisibility:
+		if not item.hidden:
+			return GradescopeVisibility.VISIBLE.value
 		else:
-			return self.visibility
-
-	def get_item_visibility_string(self, item: RubricItem) -> str:
-		vis = self.get_item_visibility(item)
-		return vis.value
+			return self.hidden_tests_setting.value
 
 	def format_item(self, item: RubricItem) -> dict:
 		rubric_item = {
 			"name": item.name,
 			"score": item.score,
-			"visibility": self.get_item_visibility_string(item),
+			"visibility": self.get_item_visibility_value(item),
 		}
 
 		if item.passed is not None:

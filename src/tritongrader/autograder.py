@@ -7,9 +7,8 @@ from tempfile import TemporaryDirectory
 from typing import Tuple, List, Optional
 
 from tritongrader.utils import run
-from tritongrader.test_case import TestCaseBase, IOTestCase
+from tritongrader.test_case import TestCaseBase, IOTestCaseBulkLoader
 from tritongrader.rubric import Rubric
-from tritongrader.visibility import Visibility
 
 logger = logging.getLogger("tritongrader.autograder")
 
@@ -94,13 +93,11 @@ class Autograder:
     def add_test(self, test_case: TestCaseBase):
         self.test_cases.append(test_case)
 
-    def bulk_load_io_tests(
+    def io_tests_bulk_loader(
         self,
-        test_list: List[Tuple[str, float]],
         prefix: str = "",
         default_timeout_ms: float = 500,
         binary_io: bool = False,
-        visibility: Visibility = Visibility.VISIBLE,
         commands_path: Optional[str] = None,
         test_input_path: Optional[str] = None,
         expected_stdout_path: Optional[str] = None,
@@ -109,38 +106,25 @@ class Autograder:
         test_input_prefix: Optional[str] = "test-",
         expected_stdout_prefix: Optional[str] = "out-",
         expected_stderr_prefix: Optional[str] = "err-",
-    ):
-        if not commands_path:
-            commands_path = os.path.join(self.tests_path, "cmd")
-        if not test_input_path:
-            test_input_path = os.path.join(self.tests_path, "in")
-        if not expected_stdout_path:
-            expected_stdout_path = os.path.join(self.tests_path, "exp")
-        if not expected_stderr_path:
-            expected_stderr_path = os.path.join(self.tests_path, "exp")
-
-        for name, point_value in test_list:
-            self.add_test(
-                IOTestCase(
-                    name=name if not prefix else f"{prefix}{name}",
-                    point_value=point_value,
-                    command_path=os.path.join(
-                        commands_path, f"{commands_prefix}{name}"
-                    ),
-                    input_path=os.path.join(
-                        test_input_path, f"{test_input_prefix}{name}"
-                    ),
-                    exp_stdout_path=os.path.join(
-                        expected_stdout_path, f"{expected_stdout_prefix}{name}"
-                    ),
-                    exp_stderr_path=os.path.join(
-                        expected_stderr_path, f"{expected_stderr_prefix}{name}"
-                    ),
-                    timeout=default_timeout_ms,
-                    binary_io=binary_io,
-                    visibility=visibility,
-                )
-            )
+    ) -> IOTestCaseBulkLoader:
+        return IOTestCaseBulkLoader(
+            self,
+            commands_path=(commands_path or os.path.join(self.tests_path, "in")),
+            test_input_path=(test_input_path or os.path.join(self.tests_path, "in")),
+            expected_stdout_path=(
+                expected_stdout_path or os.path.join(self.tests_path, "exp")
+            ),
+            expected_stderr_path=(
+                expected_stderr_path or os.path.join(self.tests_path, "exp")
+            ),
+            commands_prefix=commands_prefix,
+            test_input_prefix=test_input_prefix,
+            expected_stdout_prefix=expected_stdout_prefix,
+            expected_stderr_prefix=expected_stderr_prefix,
+            prefix=prefix,
+            default_timeout_ms=default_timeout_ms,
+            binary_io=binary_io,
+        )
 
     def check_missing_files(self):
         logger.info("Checking missing files...")
