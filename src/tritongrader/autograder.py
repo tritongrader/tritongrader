@@ -76,10 +76,6 @@ class Autograder:
 
         # path to solution directory as specified in docstring
         self.tests_path = tests_path
-        # path to the in/ directory containing cmdX and testX files.
-        self.tests_in_path = os.path.join(self.tests_path, "in")
-        # path to the exp/ directory containing errX and outX files.
-        self.tests_exp_path = os.path.join(self.tests_path, "exp")
         # path to the directory containing student submission files.
         self.submission_path = submission_path
         # A sandbox directory where submission and test files will be copied to.
