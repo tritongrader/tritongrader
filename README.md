@@ -104,6 +104,9 @@ create an `IOTestCaseBulkLoader` object. This object supports two methods:
 `add_list()`, which creates a list of test cases. The test case objects created
 are then added to the autograder.
 
+Both the `add()` and `add_list()` methods return the `IOTestCaseBulkLoader`
+object, which means these methods can be chained--
+
 Example:
 
 ```python
