@@ -32,6 +32,7 @@ class Autograder:
         verbose_rubric: bool = False,
         build_command: str = None,
         compile_points: int = 0,
+        show_missing_files_check: bool = True,
         arm=True,
     ):
         """Autograder initializer.
@@ -54,6 +55,7 @@ class Autograder:
         self.supplied_files = supplied_files
         self.verbose_rubric = verbose_rubric
         self.compile_points = compile_points
+        self.show_missing_files_check = show_missing_files_check
 
         self.build_command = build_command
         self.compiled = False
@@ -122,25 +124,26 @@ class Autograder:
             binary_io=binary_io,
         )
 
-    def check_missing_files(self):
+    def check_missing_files(self) -> bool:
         logger.info("Checking missing files...")
         missing_files = []
         for filename in self.required_files:
             fpath = os.path.join(self.submission_path, filename)
             if not os.path.exists(fpath):
                 missing_files.append(filename)
-        if not missing_files:
-            self.rubric.add_item(
-                name="Missing Files Check",
-                output="All required files have been located.",
-            )
-        else:
-            self.rubric.add_item(
-                name="Missing Files Check",
-                output="Missing files:\n" + "\n".join(missing_files),
-                passed=False,
-            )
-        logger.info("Finished checking missing files.")
+        if self.show_missing_files_check:
+            if not missing_files:
+                self.rubric.add_item(
+                    name="Missing Files Check",
+                    output="All required files have been located.",
+                )
+            else:
+                self.rubric.add_item(
+                    name="Missing Files Check",
+                    output="Missing files:\n" + "\n".join(missing_files),
+                    passed=False,
+                )
+        return len(missing_files) == 0
 
     def get_default_build_command(self):
         return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
@@ -210,23 +213,25 @@ class Autograder:
         )
 
         return compiler_process.returncode
-
-    def execute(self) -> Rubric:
-        cwd = os.getcwd()
-
-        logger.info(f"{self.name} starting...")
-        logger.debug(platform.uname())
-        self.check_missing_files()
+    
+    def _execute(self):
+        if not self.check_missing_files():
+            return
 
         if self.compile_student_code() != 0:
             logger.info(f"Skipping {self.name} test(s) due to failed compilation.")
+            return
 
-        logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
-        os.chdir(self.sandbox.name)
         for test in self.test_cases:
             test.execute()
             test.add_to_rubric(self.rubric, self.verbose_rubric)
 
+    def execute(self) -> Rubric:
+        logger.debug(platform.uname())
+        logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
+        cwd = os.getcwd()
+        os.chdir(self.sandbox.name)
+        self._execute()
         logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
         os.chdir(cwd)
 
