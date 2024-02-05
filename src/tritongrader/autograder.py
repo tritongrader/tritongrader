@@ -15,20 +15,9 @@ logger = logging.getLogger("tritongrader.autograder")
 
 class Autograder:
     """
-    The Autograder class defines one autograder that can be applied to parts of
-    an assignment that share common source files and build procedure (e.g. Makefile).
-
-    You MUST provide a solution directory in this repo that contains:
-        a) all course-supplied files that need to be copied and compiled along with
-           student submissions (e.g. Makefiles, header files, etc.)
-        b) an in/ directory containing cmdX and testX files for each test case X, where
-           cmdX is a bash script describing how to run the executable, and testX contains
-           the input that will be provided to the executable via redirect ('<').
-        c) an exp/ directory containing errX and outX files for each test case X, where
-           errX contains the expected stderr output from test case X, and outX contains
-           the expected stdout output.
-
-    For questions and bug reporting, contact Jerry Yu <jiy066@ucsd.edu>
+    An autograder object defines a single set of tests that can be applied to 
+    parts of an assignment that share a common set of source files and build 
+    procedure (e.g. Makefile).
     """
 
     ARM_COMPILER = "arm-linux-gnueabihf-gcc"
@@ -82,6 +71,9 @@ class Autograder:
         return tmpdir
 
     def add_test(self, test_case: TestCaseBase):
+        """
+        Add a test case of any kind to the autograder.
+        """
         self.test_cases.append(test_case)
 
     def io_tests_bulk_loader(
@@ -98,6 +90,19 @@ class Autograder:
         expected_stdout_prefix: Optional[str] = "out-",
         expected_stderr_prefix: Optional[str] = "err-",
     ) -> IOTestCaseBulkLoader:
+        """
+        Creates a bulk loader for I/O-based test cases to create tests
+        in batches with settings configured by the bulk loader.
+
+        Two chainable methods are available in the bulk loader: .add()
+        and .add_list(). The methods can be chained like so:
+
+        ```
+        ag.io_test_bulk_loader(...).add(...).add(...).add_list(...)
+        ```
+
+        with the desired parameters for the bulk loader and the add methods.
+        """
         return IOTestCaseBulkLoader(
             self,
             commands_path=(commands_path or os.path.join(self.tests_path, "in")),
