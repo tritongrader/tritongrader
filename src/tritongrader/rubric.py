@@ -7,8 +7,6 @@ from tritongrader.visibility import GradescopeVisibility
 
 logger = logging.getLogger("tritongrader.rubric")
 
-# TODO: Separate Rubric interface from specific output formats
-
 
 class RubricItem:
 
@@ -72,11 +70,7 @@ class Rubric:
 		)
 		self._add_item(rubric_item)
 
-	def export(self):
-		logger.info(f"Rubric: {self.name} - Total score: {self._score_for_logging}")
-		return [ri.as_dict() for ri in self.items]
-
-	def __add__(self, other):
+	def __add__(self, other: 'Rubric'):
 		rubric = Rubric(name=self.name + ", " + other.name)
 		for ri in self.items + other.items:
 			rubric._add_item(ri)
