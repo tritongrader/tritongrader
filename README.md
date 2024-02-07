@@ -110,28 +110,28 @@ object, which means these methods can be chained--
 Example:
 
 ```python
-    ag = Autograder(...)  # parameters omitted
-    ag.io_tests_bulk_loader(
-        prefix="Unit Tests - ",
-        default_timeout_ms=5000,
-        commands_prefix="cmd",
-        test_input_prefix="test",
-        expected_stderr_prefix="err",
-        expected_stdout_prefix="out",
-    ).add(
-        "1",
-        2,
-        timeout_ms=20000,
-        prefix="Public - ",
-    ).add_list(
-        [
-            ("2", 4),
-            ("3", 4),
-            ("4", 4),
-        ],
-        prefix="Hidden - ",
-        hidden=True,
-    )
+ag = Autograder(...)  # parameters omitted
+ag.io_tests_bulk_loader(
+    prefix="Unit Tests - ",
+    default_timeout_ms=5000,
+    commands_prefix="cmd",
+    test_input_prefix="test",
+    expected_stderr_prefix="err",
+    expected_stdout_prefix="out",
+).add(
+    "1",
+    2,
+    timeout_ms=20000,
+    prefix="Public - ",
+).add_list(
+    [
+        ("2", 4),
+        ("3", 4),
+        ("4", 4),
+    ],
+    prefix="Hidden - ",
+    hidden=True,
+)
 ```
 
 ### Executing and Exporting Results
