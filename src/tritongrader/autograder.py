@@ -158,6 +158,7 @@ class Autograder:
     def copy2sandbox(self, src_dir, item):
         path = os.path.realpath(os.path.join(src_dir, item))
         dst = os.path.join(self.sandbox.name, item)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
         if os.path.isfile(path):
             shutil.copy2(path, dst)
             logger.info(f"Copied file from {path} to {dst}...")
