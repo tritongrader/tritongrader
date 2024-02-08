@@ -301,7 +301,7 @@ class CustomTestCase(TestCaseBase):
             name=self.name,
             score=self.result.score,
             max_score=self.point_value,
-            output=self.result.output if verbose else "",
+            output=self.result.output,
             passed=self.result.passed,
             hidden=self.hidden,
             running_time_ms=self.result.running_time_ms,
