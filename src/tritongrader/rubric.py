@@ -146,7 +146,7 @@ class GradescopeRubricFormatter(RubricFormatter):
 
 	def as_dict(self):
 		tests = [self.format_item(i) for i in self.rubric.items]
-		return {
+		ret = {
 			"score": self.get_total_score(),
 			"execution_time": self.get_total_execution_time_ms() / 1000,
 			"output": self.message,
@@ -154,6 +154,9 @@ class GradescopeRubricFormatter(RubricFormatter):
 			"stdout_visibility": self.stdout_visibility.value,
 			"tests": tests,
 		}
+		if self.hide_points:
+			ret["score"] = 0
+		return ret
 
 	def export(self, filepath=DEFAULT_RESULTS_PATH):
 		filepath = os.path.realpath(filepath)
