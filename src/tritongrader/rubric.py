@@ -101,12 +101,14 @@ class GradescopeRubricFormatter(RubricFormatter):
 		visibility: GradescopeVisibility = GradescopeVisibility.VISIBLE,
 		stdout_visibility: GradescopeVisibility = GradescopeVisibility.HIDDEN,
 		hidden_tests_setting: GradescopeVisibility = GradescopeVisibility.HIDDEN,
+		hide_points: bool = False,
 	):
 		super().__init__(rubric)
 		self.message = message
 		self.visibility: GradescopeVisibility = visibility
 		self.stdout_visibility: GradescopeVisibility = stdout_visibility
 		self.hidden_tests_setting: GradescopeVisibility = hidden_tests_setting
+		self.hide_points: bool = hide_points
 
 	def get_item_visibility_value(self, item: RubricItem) -> GradescopeVisibility:
 		if not item.hidden:
@@ -117,17 +119,17 @@ class GradescopeRubricFormatter(RubricFormatter):
 	def format_item(self, item: RubricItem) -> dict:
 		rubric_item = {
 			"name": item.name,
-			"score": item.score,
 			"visibility": self.get_item_visibility_value(item),
 		}
-
+		if not self.hide_points:
+			rubric_item["score"] = item.score
 		if item.passed is not None:
 			rubric_item["status"] = "passed" if item.passed else "failed"
 		if item.output is not None:
 			rubric_item["output"] = item.output
 		if item.input is not None:
 			rubric_item["input"] = item.input
-		if item.max_score is not None:
+		if not self.hide_points and item.max_score is not None:
 			rubric_item["max_score"] = item.max_score
 
 		return rubric_item
@@ -144,7 +146,7 @@ class GradescopeRubricFormatter(RubricFormatter):
 
 	def as_dict(self):
 		tests = [self.format_item(i) for i in self.rubric.items]
-		return {
+		ret = {
 			"score": self.get_total_score(),
 			"execution_time": self.get_total_execution_time_ms() / 1000,
 			"output": self.message,
@@ -152,6 +154,9 @@ class GradescopeRubricFormatter(RubricFormatter):
 			"stdout_visibility": self.stdout_visibility.value,
 			"tests": tests,
 		}
+		if self.hide_points:
+			ret["score"] = 0
+		return ret
 
 	def export(self, filepath=DEFAULT_RESULTS_PATH):
 		filepath = os.path.realpath(filepath)
