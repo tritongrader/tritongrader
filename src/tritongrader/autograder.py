@@ -7,8 +7,9 @@ from tempfile import TemporaryDirectory
 from typing import Tuple, List
 
 from tritongrader.utils import run
-from tritongrader.test_case import TestCase
+from tritongrader.test_case import TestCaseBase, IOTestCase
 from tritongrader.rubric import Rubric
+from tritongrader.visibility import Visibility
 
 logger = logging.getLogger("tritongrader.autograder")
 
@@ -37,7 +38,6 @@ class Autograder:
         name: str,
         submission_path: str,
         tests_path: str,
-        hide_scores: bool = True,
         required_files: List[str] = [],
         supplied_files: List[str] = [],
         verbose_rubric: bool = False,
@@ -50,7 +50,6 @@ class Autograder:
 
         Args:
             name (str, optional): name of this autograder. Defaults to "".
-            hide_scores (bool, optional): if final scores should be hidden. Defaults to True.
             required_files (List[str], optional): submission files required by this autograder. Defaults to [].
             supplied_files (List[str], optional): files supplied by the autograder solution. Defaults to [].
             solution_dirname (str, optional): directory containing solution files and test files. Defaults to "".
@@ -59,7 +58,6 @@ class Autograder:
         self.name = name
 
         self.arm = arm
-        self.hide_scores = hide_scores
         self.required_files = required_files
         self.supplied_files = supplied_files
         self.verbose_rubric = verbose_rubric
@@ -68,9 +66,9 @@ class Autograder:
         self.build_command = build_command
         self.compiled = False
 
-        self.test_cases: List[TestCase] = []
+        self.test_cases: List[TestCaseBase] = []
 
-        self.rubric = Rubric(self.name, self.hide_scores)
+        self.rubric = Rubric(self.name)
 
         #
         # set up paths
@@ -79,71 +77,67 @@ class Autograder:
         # path to solution directory as specified in docstring
         self.tests_path = tests_path
         # path to the in/ directory containing cmdX and testX files.
-        self.tests_in_path = f"{self.tests_path}/in"
+        self.tests_in_path = os.path.join(self.tests_path, "in")
         # path to the exp/ directory containing errX and outX files.
-        self.tests_exp_path = f"{self.tests_path}/exp"
+        self.tests_exp_path = os.path.join(self.tests_path, "exp") 
         # path to the directory containing student submission files.
         self.submission_path = submission_path
-        # Copy submission files to separate sandbox folder for testing
-        self.sandbox: TemporaryDirectory = self.create_sandbox_directory(
-            self.submission_path
-        )
+        # A sandbox directory where submission and test files will be copied to.
+        self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
 
-    def create_sandbox_directory(self, submission_path: str) -> str:
+    def create_sandbox_directory(self) -> str:
         tmpdir = TemporaryDirectory(prefix="Autograder_")
         logger.info(f"Sandbox created at {tmpdir.name}")
-        shutil.copytree(submission_path, tmpdir.name, dirs_exist_ok=True)
         return tmpdir
 
-    def _add_tests(
+    def add_test(self, test_case: TestCaseBase):
+        self.test_cases.append(test_case)
+
+    def _add_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
-        hidden=False,
-        unhide_time=None,
+        visibility: Visibility = Visibility.VISIBLE,
     ):
         for test_id, point_value in test_list:
-            test_case = TestCase(
-                command_path=f"{self.tests_in_path}/cmd{test_id}",
-                input_path=f"{self.tests_in_path}/test{test_id}",
-                exp_stdout_path=f"{self.tests_exp_path}/out{test_id}",
-                exp_stderr_path=f"{self.tests_exp_path}/err{test_id}",
+            test_case = IOTestCase(
+                command_path=os.path.join(self.tests_in_path, f"cmd{test_id}"),
+                input_path=os.path.join(self.tests_in_path, f"test{test_id}"),
+                exp_stdout_path=os.path.join(self.tests_exp_path, f"out{test_id}"),
+                exp_stderr_path=os.path.join(self.tests_exp_path, f"err{test_id}"),
                 name=str(test_id) if not prefix else f"{prefix} - {test_id}",
                 timeout=default_timeout_ms / 1000,
                 arm=self.arm,
                 point_value=point_value,
                 binary_io=binary_io,
-                hidden=hidden,
-                unhide_time=unhide_time,
+                visibility=visibility,
             )
-            self.test_cases.append(test_case)
-
-    def add_public_tests(
+            self.add_test(test_case)
+    
+    def create_public_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
     ):
-        self._add_tests(test_list, prefix, default_timeout_ms, binary_io, False)
+        self._add_io_tests(test_list, prefix, default_timeout_ms, binary_io, False)
 
-    def add_private_tests(
+    def create_private_io_tests(
         self,
         test_list: List[Tuple[str, int]],
         prefix="",
         default_timeout_ms=500,
         binary_io=False,
-        unhide_time=None,
     ):
-        self._add_tests(
+        self._add_io_tests(
             test_list,
             prefix,
             default_timeout_ms,
             binary_io,
-            hidden=True,
-            unhide_time=unhide_time,
+            visibility=Visibility.HIDDEN,
         )
 
     def check_missing_files(self):
@@ -175,29 +169,38 @@ class Autograder:
             if self.build_command is not None
             else self.get_default_build_command()
         )
+    
+    def copy2sandbox(self, src_dir, item):
+        path = os.path.realpath(os.path.join(src_dir, item))
+        dst = os.path.join(self.sandbox.name, item)
+        if os.path.isfile(path):
+            shutil.copy2(path, dst)
+            logger.info(f"Copied file from {path} to {dst}...")
+        elif os.path.isdir(path):
+            shutil.copytree(path, dst)
+            logger.info(f"Copied directory from {path} to {dst}...")
+    
+    def copy_submission_files(self):
+        for f in self.required_files:
+            self.copy2sandbox(self.submission_path, f)
 
     def copy_supplied_files(self):
         for f in self.supplied_files:
-            # create directories if supplied files are paths (e.g. "in/BOOK")
-            tokens = f.rsplit("/", 1)
-            if len(tokens) == 2:
-                parent_dir = self.sandbox.name + "/" + tokens[0]
-                filename = tokens[1]
-                run(f"mkdir -p {parent_dir}")
-            else:
-                parent_dir = self.sandbox.name
-                filename = tokens[0]
-            run(f"cp {self.tests_path}/{f} {parent_dir}/{filename}")
+            self.copy2sandbox(self.tests_path, f)
 
     def compile_student_code(self) -> int:
         if self.compiled:
             return 0
 
         logger.info(f"Compiling student code (arm={self.arm})...")
+
+        self.copy_submission_files()
         self.copy_supplied_files()
+
         os.chdir(self.sandbox.name)
+
         build_cmd = self.get_build_command()
-        logger.debug(f"{build_cmd=}")
+        logger.debug(f"build_cmd: {build_cmd}")
         compiler_process = run(build_cmd, capture_output=True, text=True)
         compiled = compiler_process.returncode == 0
         if compiled:
@@ -226,11 +229,9 @@ class Autograder:
 
         return compiler_process.returncode
 
-    def execute(self):
-        """Execute the autograder
+    def execute(self) -> Rubric:
+        cwd = os.getcwd()
 
-        Returns: All rubric items
-        """
         logger.info(f"{self.name} starting...")
         logger.debug(platform.uname())
         self.check_missing_files()
@@ -238,20 +239,13 @@ class Autograder:
         if self.compile_student_code() != 0:
             logger.info(f"Skipping {self.name} test(s) due to failed compilation.")
 
-        logger.info(f"Running {self.name} test(s)...")
+        logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
         os.chdir(self.sandbox.name)
         for test in self.test_cases:
-            vis = Rubric.VIS_AFT_PUBLISH if test.hide_results() else Rubric.VIS_VISIBLE
             test.execute()
-            self.rubric.add_item(
-                name=f"{test.name}",
-                score=test.result.score,
-                max_score=test.result.score,
-                output=test.generate_test_summary(verbose=self.verbose_rubric),
-                passed=test.result.passed,
-                visibility=vis,
-            )
+            test.add_to_rubric(self.rubric, self.verbose_rubric)
 
-        logger.info(f"Finished running {self.name} test(s).")
+        logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
+        os.chdir(cwd)
 
-        return self.rubric.export()
+        return self.rubric

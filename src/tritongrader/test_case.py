@@ -4,34 +4,61 @@ import traceback
 import binascii
 import logging
 import subprocess
+import threading
 
-from datetime import datetime
+from typing import Callable
 
 from tritongrader.utils import run, get_countable_unit_string
+from tritongrader.visibility import Visibility
+from tritongrader.rubric import Rubric
 
 logger = logging.getLogger("tritongrader.test_case")
 
 
-class TestCaseResult:
+class TestCaseResultBase:
     def __init__(self):
         self.score: int = 0
         self.passed: bool = False
+        self.timed_out: bool = False
+        self.error: bool = False
+        self.running_time_ms: float = None
+        self.has_run: bool = False
+
+
+class TestCaseBase:
+    DEFAULT_TIMEOUT_MS = 100
+    DEFAULT_TIMEOUT_SECS = DEFAULT_TIMEOUT_MS / 1000
+
+    def __init__(
+        self,
+        name: str = "Test Case",
+        point_value: float = 1,
+        timeout: float = DEFAULT_TIMEOUT_MS,
+        visibility: Visibility = Visibility.VISIBLE,
+    ):
+        self.name: str = name
+        self.point_value: float = point_value
+        self.timeout: float = timeout
+        self.visibility: Visibility = visibility
+
+    def execute(self):
+        raise NotImplementedError
+
+    def add_to_rubric(self, rubric: Rubric, verbose=True):
+        raise NotImplementedError
+
+
+class IOTestCaseResult(TestCaseResultBase):
+    def __init__(self):
+        super().__init__()
         self.retcode: str = None
-        self.score: int = 0
         self.stderr: str = ""
         self.stdout: str = ""
         self.stdout_binary: bytes = b""
         self.stderr_binary: bytes = b""
-        self.timed_out: bool = False
-        self.error: bool = False
-        self.running_time: float = None
-        self.has_run: bool = False
 
 
-class TestCase:
-    DEFAULT_TIMEOUT_MS = 100
-    DEFAULT_TIMEOUT_SECS = DEFAULT_TIMEOUT_MS / 1000
-
+class IOTestCase(TestCaseBase):
     def __init__(
         self,
         command_path: str,
@@ -40,12 +67,13 @@ class TestCase:
         exp_stderr_path: str,
         name: str = "Test Case",
         point_value: float = 1,
-        timeout: float = DEFAULT_TIMEOUT_SECS,
+        timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
         arm: bool = True,
         binary_io: bool = False,
-        hidden: bool = False,
-        unhide_time: datetime = None,
+        visibility: Visibility = Visibility.VISIBLE,
     ):
+        super().__init__(name, point_value, timeout, visibility)
+
         self.arm: bool = arm
         self.binary_io: bool = binary_io
 
@@ -64,20 +92,12 @@ class TestCase:
         self.exp_stderr: str = ""
         self.exp_stderr_binary: bytes = b""
 
-        self.name: str = name
-        self.point_value: float = point_value
-        self.timeout: float = timeout
-
-        self.hidden: bool = hidden
-        self.unhide_time: datetime = unhide_time
-
-        # run states
-        self.result: TestCaseResult = TestCaseResult()
+        self.result: IOTestCaseResult = IOTestCaseResult()
 
     def __str__(self):
         return (
-            f"{self.name} {self.arm=} {self.command_path=} {self.command=} "
-            + f"{self.input_path=} {self.exp_stdout_path=} {self.exp_stderr_path}"
+            f"{self.name} arm={self.arm} cmd_path={self.command_path} cmd={self.command} "
+            + f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
         )
 
     def open_mode(self):
@@ -145,7 +165,7 @@ class TestCase:
 
     def execute(self):
         # reset states
-        self.result = TestCaseResult()
+        self.result = IOTestCaseResult()
 
         # run test case
         self.result.has_run = True
@@ -161,7 +181,7 @@ class TestCase:
                 arm=self.arm,
             )
             end_ts = time.time()
-            self.result.running_time = (end_ts - start_ts) * 1000
+            self.result.running_time_ms = (end_ts - start_ts) * 1000
             self.result.retcode = (
                 "EXIT_SUCCESS" if test.returncode == 0 else "EXIT_FAILURE"
             )
@@ -184,6 +204,17 @@ class TestCase:
             traceback.print_exc()
             self.result.error = True
 
+    def add_to_rubric(self, rubric: Rubric, verbose=False):
+        rubric.add_item(
+            name=self.name,
+            score=self.result.score,
+            max_score=self.point_value,
+            output=self.generate_test_summary(verbose),
+            passed=self.result.passed,
+            visibility=self.visibility,
+            running_time_ms=self.result.running_time_ms,
+        )
+
     def get_point_value_string(self):
         return get_countable_unit_string(self.point_value, "point")
 
@@ -205,7 +236,7 @@ class TestCase:
             self.stringify_binary_io()
 
         status_str = "PASSED" if self.result.passed else "FAILED"
-        summary = f"{status_str} in {self.result.running_time:.2f} ms."
+        summary = f"{status_str} in {self.result.running_time_ms:.2f} ms."
         if verbose or not self.result.passed:
             summary += (
                 f"\n==Test command==\n{self.command}\n"
@@ -222,17 +253,57 @@ class TestCase:
 
         return summary
 
-    def is_hidden_test(self):
-        return self.hidden
-
-    def hide_results(self):
-        if not self.hidden:
-            return False
-
-        if self.unhide_time is None:
-            return True
-        else:
-            return datetime.now(self.unhide_time.tzinfo) < self.unhide_time
-
     def generate_test_summary(self, verbose=False):
         return self._generate_summary(verbose)
+
+
+class CustomTestCaseResult(TestCaseResultBase):
+    def __init__(self):
+        super().__init__()
+        self.output: str = ""
+
+
+class CustomTestCase(TestCaseBase):
+    def __init__(
+        self,
+        func: Callable[[CustomTestCaseResult], None],
+        name: str = "Test Case",
+        point_value: float = 1,
+        timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
+        visibility: Visibility = Visibility.VISIBLE,
+    ):
+        super().__init__(name, point_value, timeout, visibility)
+        self.test_func: Callable[[CustomTestCaseResult], bool] = func
+
+    def execute(self):
+        self.result = CustomTestCaseResult()
+        self.result.has_run = True
+
+        try:
+            t = threading.Thread(
+                target=self.test_func,
+                args=[self.result],
+            )
+            t.start()
+            t.join(timeout=self.timeout)
+            if t.is_alive():
+                raise TimeoutError
+        except TimeoutError:
+            logger.info(f"{self.name} timed out (limit={self.timeout}s)!")
+            self.result.timed_out = True
+            self.result.passed = False
+        except Exception as e:
+            logger.warn(f"{self.name} raised unexpected exception!\n{str(e)}")
+            traceback.print_exc()
+            self.result.error = True
+
+    def add_to_rubric(self, rubric: Rubric, verbose=True):
+        rubric.add_item(
+            name=self.name,
+            score=self.result.score,
+            max_score=self.point_value,
+            output=self.result.output if verbose else "",
+            passed=self.result.passed,
+            visibility=self.visibility,
+            running_time_ms=self.result.running_time_ms,
+        )
