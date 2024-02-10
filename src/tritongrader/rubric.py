@@ -3,11 +3,9 @@ import json
 import logging
 from typing import List, Optional
 
-from tritongrader.visibility import Visibility, GradescopeVisibility
+from tritongrader.visibility import GradescopeVisibility
 
 logger = logging.getLogger("tritongrader.rubric")
-
-# TODO: Separate Rubric interface from specific output formats
 
 
 class RubricItem:
@@ -20,7 +18,7 @@ class RubricItem:
 		score: int = 0,
 		max_score: Optional[int] = None,
 		passed: Optional[bool] = None,
-		visibility: Visibility = Visibility.VISIBLE,
+		hidden: bool = False,
 		running_time_ms: int = -1,
 	):
 		self.name: str = name
@@ -28,7 +26,7 @@ class RubricItem:
 		self.input: str = input
 		self.score: int = score
 		self.passed: bool = passed
-		self.visibility: Visibility = visibility
+		self.hidden: bool = hidden
 		self.max_score: Optional[int] = max_score
 		self.running_time_ms: int = running_time_ms
 
@@ -55,7 +53,7 @@ class Rubric:
 		score: int = 0,
 		max_score: Optional[int] = None,
 		passed: Optional[bool] = None,
-		visibility: Visibility = Visibility.VISIBLE,
+		hidden: bool = False,
 		running_time_ms: int = -1,
 	):
 		logger.info(
@@ -67,16 +65,12 @@ class Rubric:
 			score=score,
 			max_score=max_score,
 			passed=passed,
-			visibility=visibility,
+			hidden=hidden,
 			running_time_ms=running_time_ms,
 		)
 		self._add_item(rubric_item)
 
-	def export(self):
-		logger.info(f"Rubric: {self.name} - Total score: {self._score_for_logging}")
-		return [ri.as_dict() for ri in self.items]
-
-	def __add__(self, other):
+	def __add__(self, other: 'Rubric'):
 		rubric = Rubric(name=self.name + ", " + other.name)
 		for ri in self.items + other.items:
 			rubric._add_item(ri)
@@ -107,39 +101,35 @@ class GradescopeRubricFormatter(RubricFormatter):
 		visibility: GradescopeVisibility = GradescopeVisibility.VISIBLE,
 		stdout_visibility: GradescopeVisibility = GradescopeVisibility.HIDDEN,
 		hidden_tests_setting: GradescopeVisibility = GradescopeVisibility.HIDDEN,
+		hide_points: bool = False,
 	):
 		super().__init__(rubric)
 		self.message = message
 		self.visibility: GradescopeVisibility = visibility
 		self.stdout_visibility: GradescopeVisibility = stdout_visibility
 		self.hidden_tests_setting: GradescopeVisibility = hidden_tests_setting
+		self.hide_points: bool = hide_points
 
-	def get_item_visibility(self, item: RubricItem) -> GradescopeVisibility:
-		if item.visibility == Visibility.VISIBLE:
-			return GradescopeVisibility.VISIBLE
-		elif item.visibility == Visibility.HIDDEN:
-			return self.hidden_tests_setting
+	def get_item_visibility_value(self, item: RubricItem) -> GradescopeVisibility:
+		if not item.hidden:
+			return GradescopeVisibility.VISIBLE.value
 		else:
-			return self.visibility
-
-	def get_item_visibility_string(self, item: RubricItem) -> str:
-		vis = self.get_item_visibility(item)
-		return vis.value
+			return self.hidden_tests_setting.value
 
 	def format_item(self, item: RubricItem) -> dict:
 		rubric_item = {
 			"name": item.name,
-			"score": item.score,
-			"visibility": self.get_item_visibility_string(item),
+			"visibility": self.get_item_visibility_value(item),
 		}
-
+		if not self.hide_points:
+			rubric_item["score"] = item.score
 		if item.passed is not None:
 			rubric_item["status"] = "passed" if item.passed else "failed"
 		if item.output is not None:
 			rubric_item["output"] = item.output
 		if item.input is not None:
 			rubric_item["input"] = item.input
-		if item.max_score is not None:
+		if not self.hide_points and item.max_score is not None:
 			rubric_item["max_score"] = item.max_score
 
 		return rubric_item
@@ -156,7 +146,7 @@ class GradescopeRubricFormatter(RubricFormatter):
 
 	def as_dict(self):
 		tests = [self.format_item(i) for i in self.rubric.items]
-		return {
+		ret = {
 			"score": self.get_total_score(),
 			"execution_time": self.get_total_execution_time_ms() / 1000,
 			"output": self.message,
@@ -164,6 +154,9 @@ class GradescopeRubricFormatter(RubricFormatter):
 			"stdout_visibility": self.stdout_visibility.value,
 			"tests": tests,
 		}
+		if self.hide_points:
+			ret["score"] = 0
+		return ret
 
 	def export(self, filepath=DEFAULT_RESULTS_PATH):
 		filepath = os.path.realpath(filepath)

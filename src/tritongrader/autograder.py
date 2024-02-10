@@ -4,31 +4,20 @@ import shutil
 import platform
 
 from tempfile import TemporaryDirectory
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 from tritongrader.utils import run
-from tritongrader.test_case import TestCaseBase, IOTestCase
+from tritongrader.test_case import TestCaseBase, IOTestCaseBulkLoader
 from tritongrader.rubric import Rubric
-from tritongrader.visibility import Visibility
 
 logger = logging.getLogger("tritongrader.autograder")
 
+
 class Autograder:
     """
-    The Autograder class defines one autograder that can be applied to parts of
-    an assignment that share common source files and build procedure (e.g. Makefile).
-
-    You MUST provide a solution directory in this repo that contains:
-        a) all course-supplied files that need to be copied and compiled along with
-           student submissions (e.g. Makefiles, header files, etc.)
-        b) an in/ directory containing cmdX and testX files for each test case X, where
-           cmdX is a bash script describing how to run the executable, and testX contains
-           the input that will be provided to the executable via redirect ('<').
-        c) an exp/ directory containing errX and outX files for each test case X, where
-           errX contains the expected stderr output from test case X, and outX contains
-           the expected stdout output.
-
-    For questions and bug reporting, contact Jerry Yu <jiy066@ucsd.edu>
+    An autograder object defines a single set of tests that can be applied to 
+    parts of an assignment that share a common set of source files and build 
+    procedure (e.g. Makefile).
     """
 
     ARM_COMPILER = "arm-linux-gnueabihf-gcc"
@@ -43,6 +32,7 @@ class Autograder:
         verbose_rubric: bool = False,
         build_command: str = None,
         compile_points: int = 0,
+        show_missing_files_check: bool = True,
         arm=True,
     ):
         """Autograder initializer.
@@ -57,11 +47,15 @@ class Autograder:
         """
         self.name = name
 
+        self.tests_path = tests_path
+        self.submission_path = submission_path
+
         self.arm = arm
         self.required_files = required_files
         self.supplied_files = supplied_files
         self.verbose_rubric = verbose_rubric
         self.compile_points = compile_points
+        self.show_missing_files_check = show_missing_files_check
 
         self.build_command = build_command
         self.compiled = False
@@ -70,18 +64,6 @@ class Autograder:
 
         self.rubric = Rubric(self.name)
 
-        #
-        # set up paths
-        #
-
-        # path to solution directory as specified in docstring
-        self.tests_path = tests_path
-        # path to the in/ directory containing cmdX and testX files.
-        self.tests_in_path = os.path.join(self.tests_path, "in")
-        # path to the exp/ directory containing errX and outX files.
-        self.tests_exp_path = os.path.join(self.tests_path, "exp") 
-        # path to the directory containing student submission files.
-        self.submission_path = submission_path
         # A sandbox directory where submission and test files will be copied to.
         self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
 
@@ -91,74 +73,77 @@ class Autograder:
         return tmpdir
 
     def add_test(self, test_case: TestCaseBase):
+        """
+        Add a test case of any kind to the autograder.
+        """
         self.test_cases.append(test_case)
 
-    def _add_io_tests(
+    def io_tests_bulk_loader(
         self,
-        test_list: List[Tuple[str, int]],
-        prefix="",
-        default_timeout_ms=500,
-        binary_io=False,
-        visibility: Visibility = Visibility.VISIBLE,
-    ):
-        for test_id, point_value in test_list:
-            test_case = IOTestCase(
-                command_path=os.path.join(self.tests_in_path, f"cmd{test_id}"),
-                input_path=os.path.join(self.tests_in_path, f"test{test_id}"),
-                exp_stdout_path=os.path.join(self.tests_exp_path, f"out{test_id}"),
-                exp_stderr_path=os.path.join(self.tests_exp_path, f"err{test_id}"),
-                name=str(test_id) if not prefix else f"{prefix} - {test_id}",
-                timeout=default_timeout_ms / 1000,
-                arm=self.arm,
-                point_value=point_value,
-                binary_io=binary_io,
-                visibility=visibility,
-            )
-            self.add_test(test_case)
-    
-    def create_public_io_tests(
-        self,
-        test_list: List[Tuple[str, int]],
-        prefix="",
-        default_timeout_ms=500,
-        binary_io=False,
-    ):
-        self._add_io_tests(test_list, prefix, default_timeout_ms, binary_io, False)
+        prefix: str = "",
+        default_timeout_ms: float = 500,
+        binary_io: bool = False,
+        commands_path: Optional[str] = None,
+        test_input_path: Optional[str] = None,
+        expected_stdout_path: Optional[str] = None,
+        expected_stderr_path: Optional[str] = None,
+        commands_prefix: Optional[str] = "cmd-",
+        test_input_prefix: Optional[str] = "test-",
+        expected_stdout_prefix: Optional[str] = "out-",
+        expected_stderr_prefix: Optional[str] = "err-",
+    ) -> IOTestCaseBulkLoader:
+        """
+        Creates a bulk loader for I/O-based test cases to create tests
+        in batches with settings configured by the bulk loader.
 
-    def create_private_io_tests(
-        self,
-        test_list: List[Tuple[str, int]],
-        prefix="",
-        default_timeout_ms=500,
-        binary_io=False,
-    ):
-        self._add_io_tests(
-            test_list,
-            prefix,
-            default_timeout_ms,
-            binary_io,
-            visibility=Visibility.HIDDEN,
+        Two chainable methods are available in the bulk loader: .add()
+        and .add_list(). The methods can be chained like so:
+
+        ```
+        ag.io_test_bulk_loader(...).add(...).add(...).add_list(...)
+        ```
+
+        with the desired parameters for the bulk loader and the add methods.
+        """
+        return IOTestCaseBulkLoader(
+            self,
+            commands_path=(commands_path or os.path.join(self.tests_path, "in")),
+            test_input_path=(test_input_path or os.path.join(self.tests_path, "in")),
+            expected_stdout_path=(
+                expected_stdout_path or os.path.join(self.tests_path, "exp")
+            ),
+            expected_stderr_path=(
+                expected_stderr_path or os.path.join(self.tests_path, "exp")
+            ),
+            commands_prefix=commands_prefix,
+            test_input_prefix=test_input_prefix,
+            expected_stdout_prefix=expected_stdout_prefix,
+            expected_stderr_prefix=expected_stderr_prefix,
+            prefix=prefix,
+            default_timeout_ms=default_timeout_ms,
+            binary_io=binary_io,
         )
 
-    def check_missing_files(self):
+    def check_missing_files(self) -> bool:
         logger.info("Checking missing files...")
         missing_files = []
         for filename in self.required_files:
             fpath = os.path.join(self.submission_path, filename)
             if not os.path.exists(fpath):
                 missing_files.append(filename)
-        if not missing_files:
-            self.rubric.add_item(
-                name="Missing Files Check",
-                output="All required files have been located.",
-            )
-        else:
-            self.rubric.add_item(
-                name="Missing Files Check",
-                output="Missing files:\n" + "\n".join(missing_files),
-                passed=False,
-            )
-        logger.info("Finished checking missing files.")
+        if self.show_missing_files_check:
+            if not missing_files:
+                self.rubric.add_item(
+                    name="Missing Files Check",
+                    output="All required files have been located.",
+                )
+            else:
+                self.rubric.add_item(
+                    name="Missing Files Check",
+                    output="Missing files:\n" + "\n".join(missing_files),
+                    passed=False,
+                )
+        return len(missing_files) == 0
 
     def get_default_build_command(self):
         return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
@@ -169,17 +154,18 @@ class Autograder:
             if self.build_command is not None
             else self.get_default_build_command()
         )
-    
+
     def copy2sandbox(self, src_dir, item):
         path = os.path.realpath(os.path.join(src_dir, item))
         dst = os.path.join(self.sandbox.name, item)
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
         if os.path.isfile(path):
             shutil.copy2(path, dst)
             logger.info(f"Copied file from {path} to {dst}...")
         elif os.path.isdir(path):
             shutil.copytree(path, dst)
             logger.info(f"Copied directory from {path} to {dst}...")
-    
+
     def copy_submission_files(self):
         for f in self.required_files:
             self.copy2sandbox(self.submission_path, f)
@@ -228,23 +214,25 @@ class Autograder:
         )
 
         return compiler_process.returncode
-
-    def execute(self) -> Rubric:
-        cwd = os.getcwd()
-
-        logger.info(f"{self.name} starting...")
-        logger.debug(platform.uname())
-        self.check_missing_files()
+    
+    def _execute(self):
+        if not self.check_missing_files():
+            return
 
         if self.compile_student_code() != 0:
             logger.info(f"Skipping {self.name} test(s) due to failed compilation.")
+            return
 
-        logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
-        os.chdir(self.sandbox.name)
         for test in self.test_cases:
             test.execute()
             test.add_to_rubric(self.rubric, self.verbose_rubric)
 
+    def execute(self) -> Rubric:
+        logger.debug(platform.uname())
+        logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
+        cwd = os.getcwd()
+        os.chdir(self.sandbox.name)
+        self._execute()
         logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
         os.chdir(cwd)
 

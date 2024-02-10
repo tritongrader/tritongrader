@@ -6,10 +6,9 @@ import logging
 import subprocess
 import threading
 
-from typing import Callable
+from typing import Callable, Optional, Tuple
 
 from tritongrader.utils import run, get_countable_unit_string
-from tritongrader.visibility import Visibility
 from tritongrader.rubric import Rubric
 
 logger = logging.getLogger("tritongrader.test_case")
@@ -34,12 +33,12 @@ class TestCaseBase:
         name: str = "Test Case",
         point_value: float = 1,
         timeout: float = DEFAULT_TIMEOUT_MS,
-        visibility: Visibility = Visibility.VISIBLE,
+        hidden: bool = False,
     ):
         self.name: str = name
         self.point_value: float = point_value
         self.timeout: float = timeout
-        self.visibility: Visibility = visibility
+        self.hidden: bool = hidden
 
     def execute(self):
         raise NotImplementedError
@@ -70,9 +69,9 @@ class IOTestCase(TestCaseBase):
         timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
         arm: bool = True,
         binary_io: bool = False,
-        visibility: Visibility = Visibility.VISIBLE,
+        hidden: bool = False,
     ):
-        super().__init__(name, point_value, timeout, visibility)
+        super().__init__(name, point_value, timeout, hidden)
 
         self.arm: bool = arm
         self.binary_io: bool = binary_io
@@ -211,7 +210,7 @@ class IOTestCase(TestCaseBase):
             max_score=self.point_value,
             output=self.generate_test_summary(verbose),
             passed=self.result.passed,
-            visibility=self.visibility,
+            hidden=self.hidden,
             running_time_ms=self.result.running_time_ms,
         )
 
@@ -270,9 +269,9 @@ class CustomTestCase(TestCaseBase):
         name: str = "Test Case",
         point_value: float = 1,
         timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
-        visibility: Visibility = Visibility.VISIBLE,
+        hidden: bool = False,
     ):
-        super().__init__(name, point_value, timeout, visibility)
+        super().__init__(name, point_value, timeout, hidden)
         self.test_func: Callable[[CustomTestCaseResult], bool] = func
 
     def execute(self):
@@ -302,8 +301,91 @@ class CustomTestCase(TestCaseBase):
             name=self.name,
             score=self.result.score,
             max_score=self.point_value,
-            output=self.result.output if verbose else "",
+            output=self.result.output,
             passed=self.result.passed,
-            visibility=self.visibility,
+            hidden=self.hidden,
             running_time_ms=self.result.running_time_ms,
         )
+
+
+class IOTestCaseBulkLoader:
+    def __init__(
+        self,
+        autograder,
+        commands_path: Optional[str],
+        test_input_path: Optional[str],
+        expected_stdout_path: Optional[str],
+        expected_stderr_path: Optional[str],
+        commands_prefix: Optional[str] = "cmd-",
+        test_input_prefix: Optional[str] = "test-",
+        expected_stdout_prefix: Optional[str] = "out-",
+        expected_stderr_prefix: Optional[str] = "err-",
+        prefix: str = "",
+        default_timeout_ms: float = 500,
+        binary_io: bool = False,
+    ):
+        self.autograder = autograder
+        self.commands_path = commands_path
+        self.test_input_path = test_input_path
+        self.expected_stdout_path = expected_stdout_path
+        self.expected_stderr_path = expected_stderr_path
+        self.commands_prefix = commands_prefix
+        self.test_input_prefix = test_input_prefix
+        self.expected_stdout_prefix = expected_stdout_prefix
+        self.expected_stderr_prefix = expected_stderr_prefix
+        self.prefix = prefix
+        self.default_timeout_ms = default_timeout_ms
+        self.binary_io = binary_io
+
+    def add(
+        self,
+        name: str,
+        point_value: float = 1,
+        hidden: bool = False,
+        timeout_ms: float = None,
+        binary_io: bool = False,
+        prefix: str = "",
+        no_prefix: bool = False,
+    ) -> "IOTestCaseBulkLoader":
+        if timeout_ms is None:
+            timeout_ms = self.default_timeout_ms
+
+        cmd = os.path.join(self.commands_path, self.commands_prefix + name)
+        stdin = os.path.join(self.test_input_path, self.test_input_prefix + name)
+        stdout = os.path.join(
+            self.expected_stdout_path, self.expected_stdout_prefix + name
+        )
+        stderr = os.path.join(
+            self.expected_stderr_path, self.expected_stderr_prefix + name
+        )
+
+        test_case = IOTestCase(
+            name=name if no_prefix else self.prefix + prefix + name,
+            point_value=point_value,
+            command_path=cmd,
+            input_path=stdin,
+            exp_stdout_path=stdout,
+            exp_stderr_path=stderr,
+            timeout=timeout_ms,
+            binary_io=binary_io,
+            hidden=hidden,
+            arm=self.autograder.arm,
+        )
+
+        self.autograder.add_test(test_case)
+
+        return self
+    
+    def add_list(
+        self,
+        test_list: Tuple[str, float],
+        prefix: str = "",
+        hidden: bool = False,
+        timeout_ms: float = None,
+        binary_io: bool = False
+    ):
+        for name, point_value in test_list:
+            self.add(name, point_value, hidden, timeout_ms, binary_io, prefix=prefix)
+
+        return self
+        
