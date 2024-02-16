@@ -18,7 +18,13 @@ def run(
 	text=True,
 	arm=False,
 ):
-	with open(".cmd-stdout", "wb") as fout, open(".cmd-stderr", "wb") as ferr:
+	if text:
+		read = "r"
+		write = "w"
+	else:
+		read = "rb"
+		write = "wb"
+	with open(".cmd-stdout", write) as fout, open(".cmd-stderr", write) as ferr:
 		if arm:
 			command = "qemu-arm -L /usr/arm-linux-gnueabihf/ " + command
 		sp = subprocess.run(
@@ -35,9 +41,9 @@ def run(
 		sp.stdout = "stdout too big"
 		sp.stderr = "stderr too big"
 	else:
-		with open(".cmd-stdout", "rb") as fout, open(".cmd-stderr", "rb") as ferr:
-			sp.stdout = str(fout.read())
-			sp.stderr = str(fout.read())
+		with open(".cmd-stdout", read) as fout, open(".cmd-stderr", read) as ferr:
+			sp.stdout = fout.read()
+			sp.stderr = ferr.read()
 
 	if print_command:
 		print(f"$ {command}")
