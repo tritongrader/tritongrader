@@ -4,47 +4,14 @@ import traceback
 import binascii
 import logging
 import subprocess
-import threading
+import logging
 
-from typing import Callable, Optional, Tuple
+from typing import Optional, Tuple
 
+from tritongrader.test_case.test_case_base import TestCaseBase, TestCaseResultBase
 from tritongrader.utils import run, get_countable_unit_string
-from tritongrader.rubric import Rubric
 
-logger = logging.getLogger("tritongrader.test_case")
-
-
-class TestCaseResultBase:
-    def __init__(self):
-        self.score: int = 0
-        self.passed: bool = False
-        self.timed_out: bool = False
-        self.error: bool = False
-        self.running_time_ms: float = None
-        self.has_run: bool = False
-
-
-class TestCaseBase:
-    DEFAULT_TIMEOUT_MS = 100
-    DEFAULT_TIMEOUT_SECS = DEFAULT_TIMEOUT_MS / 1000
-
-    def __init__(
-        self,
-        name: str = "Test Case",
-        point_value: float = 1,
-        timeout: float = DEFAULT_TIMEOUT_MS,
-        hidden: bool = False,
-    ):
-        self.name: str = name
-        self.point_value: float = point_value
-        self.timeout: float = timeout
-        self.hidden: bool = hidden
-
-    def execute(self):
-        raise NotImplementedError
-
-    def add_to_rubric(self, rubric: Rubric, verbose=True):
-        raise NotImplementedError
+logger = logging.getLogger("tritongrader.test_case.io_test_case")
 
 
 class IOTestCaseResult(TestCaseResultBase):
@@ -53,8 +20,6 @@ class IOTestCaseResult(TestCaseResultBase):
         self.retcode: str = None
         self.stderr: str = ""
         self.stdout: str = ""
-        self.stdout_binary: bytes = b""
-        self.stderr_binary: bytes = b""
 
 
 class IOTestCase(TestCaseBase):
@@ -203,7 +168,7 @@ class IOTestCase(TestCaseBase):
             traceback.print_exc()
             self.result.error = True
 
-    def add_to_rubric(self, rubric: Rubric, verbose=False):
+    def add_to_rubric(self, rubric, verbose=False):
         rubric.add_item(
             name=self.name,
             score=self.result.score,
@@ -254,58 +219,6 @@ class IOTestCase(TestCaseBase):
 
     def generate_test_summary(self, verbose=False):
         return self._generate_summary(verbose)
-
-
-class CustomTestCaseResult(TestCaseResultBase):
-    def __init__(self):
-        super().__init__()
-        self.output: str = ""
-
-
-class CustomTestCase(TestCaseBase):
-    def __init__(
-        self,
-        func: Callable[[CustomTestCaseResult], None],
-        name: str = "Test Case",
-        point_value: float = 1,
-        timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
-        hidden: bool = False,
-    ):
-        super().__init__(name, point_value, timeout, hidden)
-        self.test_func: Callable[[CustomTestCaseResult], bool] = func
-
-    def execute(self):
-        self.result = CustomTestCaseResult()
-        self.result.has_run = True
-
-        try:
-            t = threading.Thread(
-                target=self.test_func,
-                args=[self.result],
-            )
-            t.start()
-            t.join(timeout=self.timeout)
-            if t.is_alive():
-                raise TimeoutError
-        except TimeoutError:
-            logger.info(f"{self.name} timed out (limit={self.timeout}s)!")
-            self.result.timed_out = True
-            self.result.passed = False
-        except Exception as e:
-            logger.warn(f"{self.name} raised unexpected exception!\n{str(e)}")
-            traceback.print_exc()
-            self.result.error = True
-
-    def add_to_rubric(self, rubric: Rubric, verbose=True):
-        rubric.add_item(
-            name=self.name,
-            score=self.result.score,
-            max_score=self.point_value,
-            output=self.result.output,
-            passed=self.result.passed,
-            hidden=self.hidden,
-            running_time_ms=self.result.running_time_ms,
-        )
 
 
 class IOTestCaseBulkLoader:
@@ -375,17 +288,16 @@ class IOTestCaseBulkLoader:
         self.autograder.add_test(test_case)
 
         return self
-    
+
     def add_list(
         self,
         test_list: Tuple[str, float],
         prefix: str = "",
         hidden: bool = False,
         timeout_ms: float = None,
-        binary_io: bool = False
+        binary_io: bool = False,
     ):
         for name, point_value in test_list:
             self.add(name, point_value, hidden, timeout_ms, binary_io, prefix=prefix)
 
         return self
-        
