@@ -3,7 +3,7 @@ import subprocess
 import time
 import traceback
 
-from tritongrader.test_case.test_case_base import TestCaseBase ,TestCaseResultBase
+from tritongrader.test_case.test_case_base import TestCaseBase, TestCaseResultBase
 from tritongrader.utils import run
 
 logger = logging.getLogger("tritongrader.test_case.basic_test_case")
@@ -32,7 +32,7 @@ class BasicTestCase(TestCaseBase):
         timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
         arm: bool = True,
         binary_io: bool = False,
-        hidden: bool = False
+        hidden: bool = False,
     ):
         super().__init__(name, point_value, timeout, hidden)
 
@@ -43,7 +43,7 @@ class BasicTestCase(TestCaseBase):
         self.expected_retcode: int = expected_retcode
 
         self.result: BasicTestCaseResult = None
-    
+
     def _execute(self):
         self.result.has_run = True
         start_ts = time.time()
@@ -65,7 +65,6 @@ class BasicTestCase(TestCaseBase):
         self.result.stderr = testproc.stderr
         self.result.score = self.point_value if self.result.passed else 0
 
-    
     def execute(self):
         self.result = BasicTestCaseResult()
 
