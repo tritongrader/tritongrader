@@ -22,10 +22,11 @@ class ResultsFormatterBase:
 
     def format_custom_test(self, result: CustomTestCaseResult):
         raise NotImplementedError
-    
+
     def execute(self, results: List[TestCaseResultBase]):
         for result in results:
             self.formatters[type(result)](result)
+
 
 class GradescopeResultsFormatter(ResultsFormatterBase):
     def __init__(self):
@@ -33,13 +34,14 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
 
     def format_io_test(self, result: IOTestCaseResult):
         print("gradescope: format_io_test")
-    
+
     def format_basic_test(self, result: BasicTestCaseResult):
         print("gradescope: format_basic_test")
-    
+
     def format_custom_test(self, result: CustomTestCaseResult):
         print("gradescope: format_custom_test")
-    
+
+
 if __name__ == "__main__":
     formatter = GradescopeResultsFormatter()
     formatter.formatters[IOTestCase](None)
