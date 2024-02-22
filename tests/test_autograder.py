@@ -17,7 +17,7 @@ import pprint
 from tritongrader.autograder import Autograder  # noqa
 from tritongrader.rubric import GradescopeRubricFormatter  # noqa
 from tritongrader.visibility import GradescopeVisibility  # noqa
-from tritongrader.test_case import CustomTestCase, CustomTestCaseResult  # noqa
+from tritongrader.test_case import CustomTestCase, CustomTestCaseResult, BasicTestCase # noqa
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
@@ -49,6 +49,15 @@ if __name__ == "__main__":
     custom_test = CustomTestCase(test_num_lines, "Custom Test Case 1", point_value=4)
 
     ag.add_test(custom_test)
+
+    basic_test = BasicTestCase(
+        "echo \"Hello World\"",
+        name="Hello world!",
+        point_value=5,
+        arm=False,
+    )
+
+    ag.add_test(basic_test)
 
     ag.io_tests_bulk_loader(
         prefix="Unit Tests - ",

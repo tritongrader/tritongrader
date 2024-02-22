@@ -32,7 +32,7 @@ def run(
 			shell=True,
 			stdout=fout,
 			stderr=ferr,
-			text=text or print_output,
+			encoding="utf-8" if text or print_output else None,
 			timeout=timeout,
 		)
 	# TODO configurable max size
