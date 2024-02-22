@@ -6,11 +6,11 @@ import threading
 from typing import Callable, Optional, Tuple
 
 from tritongrader.rubric import Rubric
-from tritongrader.test_case.test_case_base import TestCaseBase, TestCaseResultBase
+from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
 
 logger = logging.getLogger("tritongrader.test_case")
 
-class CustomTestCaseResult(TestCaseResultBase):
+class CustomTestResult(TestResultBase):
     def __init__(self):
         super().__init__()
         self.output: str = ""
@@ -19,17 +19,17 @@ class CustomTestCaseResult(TestCaseResultBase):
 class CustomTestCase(TestCaseBase):
     def __init__(
         self,
-        func: Callable[[CustomTestCaseResult], None],
+        func: Callable[[CustomTestResult], None],
         name: str = "Test Case",
         point_value: float = 1,
         timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
         hidden: bool = False,
     ):
         super().__init__(name, point_value, timeout, hidden)
-        self.test_func: Callable[[CustomTestCaseResult], bool] = func
+        self.test_func: Callable[[CustomTestResult], bool] = func
 
     def execute(self):
-        self.result = CustomTestCaseResult()
+        self.result = CustomTestResult()
         self.result.has_run = True
 
         try:

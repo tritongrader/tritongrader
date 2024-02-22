@@ -7,13 +7,13 @@ import subprocess
 
 from typing import Optional, Tuple
 
-from tritongrader.test_case.test_case_base import TestCaseBase, TestCaseResultBase
+from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
 from tritongrader.utils import run, get_countable_unit_string
 
 logger = logging.getLogger("tritongrader.test_case.io_test_case")
 
 
-class IOTestCaseResult(TestCaseResultBase):
+class IOTestResult(TestResultBase):
     def __init__(self):
         super().__init__()
         self.retcode: str = None
@@ -55,7 +55,7 @@ class IOTestCase(TestCaseBase):
         self.exp_stderr: str = ""
         self.exp_stderr_binary: bytes = b""
 
-        self.result: IOTestCaseResult = IOTestCaseResult()
+        self.result: IOTestResult = IOTestResult()
 
     def __str__(self):
         return (
@@ -128,7 +128,7 @@ class IOTestCase(TestCaseBase):
 
     def execute(self):
         # reset states
-        self.result = IOTestCaseResult()
+        self.result = IOTestResult()
 
         # run test case
         self.result.has_run = True

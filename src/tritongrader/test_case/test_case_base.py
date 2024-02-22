@@ -1,4 +1,4 @@
-class TestCaseResultBase:
+class TestResultBase:
     def __init__(self):
         self.score: int = 0
         self.passed: bool = False
@@ -23,7 +23,7 @@ class TestCaseBase:
         self.point_value: float = point_value
         self.timeout: float = timeout
         self.hidden: bool = hidden
-        self.result: TestCaseResultBase = None
+        self.result: TestResultBase = None
 
-    def execute(self) -> TestCaseResultBase:
+    def execute(self) -> TestResultBase:
         raise NotImplementedError

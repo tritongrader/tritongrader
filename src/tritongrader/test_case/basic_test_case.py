@@ -3,13 +3,13 @@ import subprocess
 import time
 import traceback
 
-from tritongrader.test_case.test_case_base import TestCaseBase, TestCaseResultBase
+from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
 from tritongrader.utils import run
 
 logger = logging.getLogger("tritongrader.test_case.basic_test_case")
 
 
-class BasicTestCaseResult(TestCaseResultBase):
+class BasicTestResult(TestResultBase):
     def __init__(self):
         super().__init__()
         self.retcode: int = None
@@ -42,7 +42,7 @@ class BasicTestCase(TestCaseBase):
         self.command: str = command
         self.expected_retcode: int = expected_retcode
 
-        self.result: BasicTestCaseResult = None
+        self.result: BasicTestResult = None
 
     def _execute(self):
         self.result.has_run = True
@@ -66,7 +66,7 @@ class BasicTestCase(TestCaseBase):
         self.result.score = self.point_value if self.result.passed else 0
 
     def execute(self):
-        self.result = BasicTestCaseResult()
+        self.result = BasicTestResult()
 
         try:
             self._execute()

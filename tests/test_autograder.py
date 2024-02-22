@@ -15,7 +15,7 @@ import pprint
 from tritongrader.autograder import Autograder  # noqa
 from tritongrader.rubric import GradescopeRubricFormatter  # noqa
 from tritongrader.visibility import GradescopeVisibility  # noqa
-from tritongrader.test_case import CustomTestCase, CustomTestCaseResult, BasicTestCase  # noqa
+from tritongrader.test_case import CustomTestCase, CustomTestResult, BasicTestCase  # noqa
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         arm=False,
     )
 
-    def test_num_lines(result: CustomTestCaseResult):
+    def test_num_lines(result: CustomTestResult):
         line_count = 0
         with open("./palindrome.c", "r") as fp:
             line_count = len(fp.readlines())
