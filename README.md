@@ -56,6 +56,14 @@ ag = Autograder(
 The library currently supports two types of test cases:
 I/O-based tests (`IOTestCase`) and custom tests (`CustomTestCase`).
 
+#### Basic Test Cases
+`BasicTestCase` runs a command in the terminal and evaluates the return code
+to determine if the test passes. The output of the command are stored for
+information only.
+
+The expected return code can be configured during test initialization, in
+case a failure return code is expected.
+
 #### I/O-based tests
 
 `IOTestCase` runs a command read from a _command file_, and (optionally)
@@ -73,7 +81,6 @@ output that cannot be interpreted as text.)
 
 Lastly, for the time being, an `arm` flag is provided to specify if the test
 should be run in an emulated ARM environment. **This flag will soon be deprecated.**
-
 
 #### Custom tests
 
