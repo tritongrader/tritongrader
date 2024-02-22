@@ -2,9 +2,7 @@
 import os
 import sys
 
-sys.path.append(
-    os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src")
-)
+sys.path.append(os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src"))
 
 #
 # The following is how a grading script using the tritongrader
@@ -17,7 +15,7 @@ import pprint
 from tritongrader.autograder import Autograder  # noqa
 from tritongrader.rubric import GradescopeRubricFormatter  # noqa
 from tritongrader.visibility import GradescopeVisibility  # noqa
-from tritongrader.test_case import CustomTestCase, CustomTestCaseResult, BasicTestCase # noqa
+from tritongrader.test_case import CustomTestCase, CustomTestCaseResult, BasicTestCase  # noqa
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
