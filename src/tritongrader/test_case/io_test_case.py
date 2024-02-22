@@ -4,7 +4,6 @@ import traceback
 import binascii
 import logging
 import subprocess
-import logging
 
 from typing import Optional, Tuple
 
