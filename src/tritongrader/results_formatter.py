@@ -6,11 +6,24 @@ from tritongrader.test_case import CustomTestCase, CustomTestCaseResult
 
 
 class ResultsFormatterBase:
-    pass
+    def __init__(self):
+        self.formatters: Dict[TestCaseBase, Callable[[TestCaseResultBase], None]] = {
+            IOTestCase, self.format_io_test,
+            BasicTestCase, self.format_basic_test,
+            CustomTestCase, self.format_custom_test,
+        }
+
+    def format_io_test(self, result: IOTestCaseResult):
+        raise NotImplementedError
+    
+    def format_basic_test(self, result: BasicTestCaseResult):
+        raise NotImplementedError
+
+    def format_custom_test(self, result: CustomTestCaseResult):
+        raise NotImplementedError
 
 
 class GradescopeResultsFormatter(ResultsFormatterBase):
-    formatters: Dict[TestCaseBase, Callable[[TestCaseResultBase], None]] = {}
 
     def __init__(self):
         pass
