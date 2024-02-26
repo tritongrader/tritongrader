@@ -171,6 +171,7 @@ class IOTestCase(TestCaseBase):
 		self.result.has_run = True
 		try:
 			exe_cmd = self.get_execute_command()
+			print(f"Running test case with command \"{exe_cmd}\" and timeout of {self.timeout}s")
 			start_ts = time.time()
 			test = run(
 				exe_cmd,
