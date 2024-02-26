@@ -29,7 +29,7 @@ class TestCaseResultBase:
 
 
 class TestCaseBase:
-	DEFAULT_TIMEOUT_SECS: float = 1
+	DEFAULT_TIMEOUT: float = 1
 
 	def __init__(
 		self,
@@ -71,7 +71,7 @@ class IOTestCase(TestCaseBase):
 		exp_stderr_path: str,
 		name: str = "Test Case",
 		point_value: float = 1,
-		timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
+		timeout: float = TestCaseBase.DEFAULT_TIMEOUT,
 		arm: bool = True,
 		binary_io: bool = False,
 		hidden: bool = False,
@@ -267,7 +267,7 @@ class CustomTestCase(TestCaseBase):
 		func: Callable[[CustomTestCaseResult], None],
 		name: str = "Test Case",
 		point_value: float = 1,
-		timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
+		timeout: float = TestCaseBase.DEFAULT_TIMEOUT,
 		hidden: bool = False,
 	):
 		super().__init__(name, point_value, timeout, hidden)
