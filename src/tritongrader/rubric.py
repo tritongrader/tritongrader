@@ -19,7 +19,7 @@ class RubricItem:
 		max_score: Optional[int] = None,
 		passed: Optional[bool] = None,
 		hidden: bool = False,
-		running_time_ms: int = -1,
+		running_time: float = -1,
 	):
 		self.name: str = name
 		self.output: str = output
@@ -28,7 +28,7 @@ class RubricItem:
 		self.passed: bool = passed
 		self.hidden: bool = hidden
 		self.max_score: Optional[int] = max_score
-		self.running_time_ms: int = running_time_ms
+		self.running_time: float = running_time
 
 
 class Rubric:
@@ -54,7 +54,7 @@ class Rubric:
 		max_score: Optional[int] = None,
 		passed: Optional[bool] = None,
 		hidden: bool = False,
-		running_time_ms: int = -1,
+		running_time: float = -1,
 	):
 		logger.info(
 			f"Rubric: {self.name} - Adding rubric item {name} score={score} passed={passed}")
@@ -66,7 +66,7 @@ class Rubric:
 			max_score=max_score,
 			passed=passed,
 			hidden=hidden,
-			running_time_ms=running_time_ms,
+			running_time=running_time,
 		)
 		self._add_item(rubric_item)
 
@@ -137,18 +137,21 @@ class GradescopeRubricFormatter(RubricFormatter):
 	def get_total_score(self):
 		return sum(i.score for i in self.rubric.items)
 
-	def get_total_execution_time_ms(self):
+	def get_total_execution_time(self):
+		"""
+		Returns the total execution time in seconds.
+		"""
 		sum = 0
 		for item in self.rubric.items:
-			if item.running_time_ms:
-				sum += item.running_time_ms
+			if item.running_time:
+				sum += item.running_time
 		return sum
 
 	def as_dict(self):
 		tests = [self.format_item(i) for i in self.rubric.items]
 		ret = {
 			"score": self.get_total_score(),
-			"execution_time": self.get_total_execution_time_ms() / 1000,
+			"execution_time": self.get_total_execution_time(),
 			"output": self.message,
 			"visibility": self.visibility.value,
 			"stdout_visibility": self.stdout_visibility.value,

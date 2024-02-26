@@ -15,13 +15,16 @@ logger = logging.getLogger("tritongrader.test_case")
 
 
 class TestCaseResultBase:
+	"""
+	running_time: in seconds
+	"""
 
 	def __init__(self):
 		self.score: int = 0
 		self.passed: bool = False
 		self.timed_out: bool = False
 		self.error: bool = False
-		self.running_time_ms: float = None
+		self.running_time: float = None
 		self.has_run: bool = False
 
 
@@ -155,7 +158,6 @@ class IOTestCase(TestCaseBase):
 	def get_execute_command(self):
 		self.command = self.extract_command_from_bash_file(self.command_path)
 		self.read_test_input(self.input_path)
-		logger.info(f"Running {str(self)}")
 		# if running in an ARM simulator, we cannot use the bash script
 		# and must instead use the command inside directly.
 		exe = self.command if self.arm else self.command_path
@@ -171,7 +173,9 @@ class IOTestCase(TestCaseBase):
 		self.result.has_run = True
 		try:
 			exe_cmd = self.get_execute_command()
-			print(f"Running test case with command \"{exe_cmd}\" and timeout of {self.timeout}s")
+			logger.info(
+				f"Running test case {str(self)} with command \"{exe_cmd}\" and timeout of {self.timeout}s"
+			)
 			start_ts = time.time()
 			test = run(
 				exe_cmd,
@@ -182,7 +186,7 @@ class IOTestCase(TestCaseBase):
 				arm=self.arm,
 			)
 			end_ts = time.time()
-			self.result.running_time_ms = (end_ts - start_ts) * 1000
+			self.result.running_time = end_ts - start_ts
 			self.result.retcode = ("EXIT_SUCCESS" if test.returncode == 0 else "EXIT_FAILURE")
 			if self.binary_io:
 				self.result.stderr_binary = test.stderr
@@ -211,7 +215,7 @@ class IOTestCase(TestCaseBase):
 			output=self.generate_test_summary(verbose),
 			passed=self.result.passed,
 			hidden=self.hidden,
-			running_time_ms=self.result.running_time_ms,
+			running_time=self.result.running_time,
 		)
 
 	def get_point_value_string(self):
@@ -233,7 +237,7 @@ class IOTestCase(TestCaseBase):
 			self.stringify_binary_io()
 
 		status_str = "PASSED" if self.result.passed else "FAILED"
-		summary = f"{status_str} in {self.result.running_time_ms:.2f} ms."
+		summary = f"{status_str} in {self.result.running_time:.2f} s."
 		if verbose or not self.result.passed:
 			summary += (f"\n==Test command==\n{self.command}\n" +
 				f"==Test input==\n{self.input}\n" + f"Return value: {self.result.retcode}\n" +
@@ -299,7 +303,7 @@ class CustomTestCase(TestCaseBase):
 			output=self.result.output,
 			passed=self.result.passed,
 			hidden=self.hidden,
-			running_time_ms=self.result.running_time_ms,
+			running_time=self.result.running_time,
 		)
 
 
