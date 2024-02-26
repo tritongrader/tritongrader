@@ -227,7 +227,7 @@ class IOTestCase(TestCaseBase):
 		if self.result.error:
 			return "The test case experienced an unexpected runtime error!"
 		if self.result.timed_out:
-			return (f"The test case timed out. (limit={self.timeout} s)." +
+			return (f"The test case didn't finish within {self.timeout} s.  " +
 				"Please check your code for infinite loops.")
 
 		# If this test has binary IO, then we need to convert the
