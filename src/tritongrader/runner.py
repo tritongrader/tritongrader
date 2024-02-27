@@ -49,7 +49,7 @@ class CommandRunner:
             line2 = fp2.readline()
             if line1 != line2:
                 return False
-            if line1 is None or line2 is None:
+            if not line1 or not line2:
                 break
         return True
 

@@ -15,14 +15,10 @@ class ResultsFormatterBase:
             CustomTestCase: self.format_custom_test,
         }
         self.test_cases: List[TestCaseBase] = []
-        if isinstance(src, Autograder):
-            self.test_cases.append(src.test_cases)
-        elif isinstance(src, Iterable):
-            for autograder in src:
-                self.test_cases.extend(autograder.test_cases)
-        else:
-            raise Exception("Invalid formatter source")
-    
+        ags = [src,] if isinstance(src, Autograder) else src
+        for autograder in ags:
+            self.test_cases.extend(autograder.test_cases)
+
     def format_io_test(self, test: IOTestCase):
         raise NotImplementedError
 
@@ -31,10 +27,10 @@ class ResultsFormatterBase:
 
     def format_custom_test(self, test: CustomTestCase):
         raise NotImplementedError
-    
+
     def format_test(self, test: TestCaseBase):
         return self.formatters[type(test)](test)
-    
+
     def execute(self):
         raise NotImplementedError
 
@@ -63,14 +59,17 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         }
 
     def format_io_test(self, test: IOTestCase):
-        pass
+        return {
+            "output": "gradescope: format_io_test",
+            "input": "gradescope: format_io_test",
+        }
 
     def format_basic_test(self, result: BasicTestCase):
-        print("gradescope: format_basic_test")
+        return {"output": "gradescope: format_basic_test"}
 
     def format_custom_test(self, result: CustomTestCase):
-        print("gradescope: format_custom_test")
-    
+        return {"output": "gradescope: format_custom_test"}
+
     def format_test(self, test: TestCaseBase):
         item = {
             "name": test.name,
@@ -80,20 +79,23 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             item["score"] = test.result.score
         if test.result.passed is not None:
             item["status"] = test.result.passed
+
         item.update(super().format_test(test))
+        return item
 
     def get_total_score(self):
         return sum(i.result.score for i in self.test_cases)
-    
+
     def execute(self):
-        self.rubric.update({
-            "score": self.get_total_score(),
-            "tests": [self.format_test(i) for i in self.test_cases]
-        })
+        self.rubric.update(
+            {
+                "score": self.get_total_score(),
+                "tests": [self.format_test(i) for i in self.test_cases],
+            }
+        )
         if self.hide_points:
             self.rubric["score"] = 0
         return self.rubric
-
 
 
 if __name__ == "__main__":

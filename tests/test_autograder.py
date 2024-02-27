@@ -13,8 +13,7 @@ sys.path.append(os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "
 import pprint
 
 from tritongrader.autograder import Autograder  # noqa
-from tritongrader.rubric import GradescopeRubricFormatter  # noqa
-from tritongrader.visibility import GradescopeVisibility  # noqa
+from tritongrader.formatter import GradescopeResultsFormatter
 from tritongrader.test_case import CustomTestCase, CustomTestResult, BasicTestCase  # noqa
 
 if __name__ == "__main__":
@@ -79,11 +78,12 @@ if __name__ == "__main__":
         hidden=True,
     )
 
-    formatter = GradescopeRubricFormatter(
-        ag.execute(),
-        message="tritongrader -- test",
-        hidden_tests_setting=GradescopeVisibility.AFTER_PUBLISHED,
+    ag.execute()
+
+    formatter = GradescopeResultsFormatter(
+        src=ag,
+        message="tritongrader test",
+        hidden_tests_setting="after_published",
     )
 
-    pprint.pprint(formatter.as_dict())
-    formatter.export(f"{example_dir}/results.json")
+    pprint.pprint(formatter.execute())
