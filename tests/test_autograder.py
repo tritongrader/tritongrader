@@ -84,6 +84,7 @@ if __name__ == "__main__":
         src=ag,
         message="tritongrader test",
         hidden_tests_setting="after_published",
+        html_diff=False,
     )
 
     pprint.pprint(formatter.execute())

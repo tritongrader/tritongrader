@@ -45,16 +45,8 @@ class IOTestCase(TestCaseBase):
         self.command: str = ""
 
         self.input_path: str = input_path if os.path.exists(input_path) else None
-        self.input: str = ""
-        self.input_binary: bytes = b""
-
         self.exp_stdout_path: str = exp_stdout_path
-        self.exp_stdout: str = ""
-        self.exp_stdout_binary: bytes = b""
-
         self.exp_stderr_path: str = exp_stderr_path
-        self.exp_stderr: str = ""
-        self.exp_stderr_binary: bytes = b""
 
         self.result: IOTestResult = IOTestResult()
         self.runner: CommandRunner = None
@@ -65,8 +57,35 @@ class IOTestCase(TestCaseBase):
             + f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
         )
 
+    @property
     def open_mode(self):
         return "r" if not self.binary_io else "rb"
+
+    @property
+    def expected_stdout(self):
+        if not self.exp_stdout_path:
+            return None
+        with open(self.exp_stdout_path, self.open_mode) as fp:
+            return fp.read()
+
+    @property
+    def expected_stderr(self):
+        if not self.exp_stderr_path:
+            return None
+        with open(self.exp_stderr_path, self.open_mode) as fp:
+            return fp.read()
+
+    @property
+    def actual_stdout(self):
+        if not self.runner:
+            raise Exception("no runner initialized")
+        return self.runner.stdout
+
+    @property
+    def actual_stderr(self):
+        if not self.runner:
+            raise Exception("no runner initialized")
+        return self.runner.stderr
 
     def extract_command_from_bash_file(self, bash_file_path):
         # Command files cannot be binary. Can use "r" mode directly here.
@@ -74,31 +93,16 @@ class IOTestCase(TestCaseBase):
             test_command = cmd_fp.read().split("\n")[1]
         return test_command
 
-    @staticmethod
-    def bin2text(binary: bytes):
-        """Attempt to convert binary I/O products to Unicode. Fallback to hexdumps."""
-        try:
-            return binary.decode()
-        except Exception:
-            return binascii.hexlify(binary, " ", -2).decode()
-
-    def stringify_binary_io(self):
-        self.input = self.bin2text(self.input_binary)
-        self.result.stdout = self.bin2text(self.result.stdout_binary)
-        self.result.stderr = self.bin2text(self.result.stderr_binary)
-        self.exp_stdout = self.bin2text(self.exp_stdout_binary)
-        self.exp_stderr = self.bin2text(self.exp_stderr_binary)
-
     def read_test_input(self, input_file_path):
         if not input_file_path:
             return
-        with open(input_file_path, self.open_mode()) as in_fp:
+        with open(input_file_path, self.open_mode) as in_fp:
             if self.binary_io:
                 self.input_binary = in_fp.read()
             else:
                 self.input = in_fp.read()
         return self.input
-    
+
     def check_output(self):
         if not self.runner:
             return False
@@ -116,7 +120,7 @@ class IOTestCase(TestCaseBase):
         if self.input_path:
             exe += f" < {self.input_path}"
         return exe
-    
+
     def execute(self):
         # reset states
         self.result = IOTestResult()
@@ -129,7 +133,7 @@ class IOTestCase(TestCaseBase):
                 capture_output=True,
                 text=(not self.binary_io),
                 timeout_ms=self.timeout,
-                arm=self.arm
+                arm=self.arm,
             )
             self.runner.run()
             self.result.passed = self.check_output()
@@ -147,52 +151,11 @@ class IOTestCase(TestCaseBase):
             name=self.name,
             score=self.result.score,
             max_score=self.point_value,
-            output=self.generate_test_summary(verbose),
+            output="output (add_to_rubric is deprecated!)",
             passed=self.result.passed,
             hidden=self.hidden,
             running_time_ms=self.result.running_time_ms,
         )
-
-    def get_point_value_string(self):
-        return get_countable_unit_string(self.point_value, "point")
-
-    def _generate_summary(self, verbose=False):
-        if not self.result.has_run:
-            return "This test was not run."
-        if self.result.error:
-            return "The test case experienced an unexpected runtime error!"
-        if self.result.timed_out:
-            return (
-                f"The test case timed out. (limit={self.timeout} ms)."
-                + "Please check your code for infinite loops."
-            )
-
-        # If this test has binary IO, then we need to convert the
-        # binary input/output/expected values into readable strings
-        # for readability on Gradescope.
-        if self.binary_io:
-            self.stringify_binary_io()
-
-        status_str = "PASSED" if self.result.passed else "FAILED"
-        summary = f"{status_str} in {self.runner.running_time_ms:.2f} ms."
-        if verbose or not self.result.passed:
-            summary += (
-                f"\n==Test command==\n{self.command}\n"
-                + f"==Test input==\n{self.input}\n"
-                + f"Return value: {self.result.retcode}\n"
-                + f"==EXPECTED STDOUT==\n{self.exp_stdout}\n"
-                + f"==EXPECTED STDERR==\n{self.exp_stderr}"
-            )
-        if not self.result.passed:
-            summary += (
-                f"\n==YOUR STDOUT==\n{self.result.stdout}\n"
-                + f"==YOUR STDERR==\n{self.result.stderr}\n"
-            )
-
-        return summary
-
-    def generate_test_summary(self, verbose=False):
-        return self._generate_summary(verbose)
 
 
 class IOTestCaseBulkLoader:

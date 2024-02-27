@@ -1,8 +1,13 @@
+import os
 import subprocess
 import time
+import logging
 
 from tempfile import NamedTemporaryFile
 from typing import IO, TextIO, Optional, BinaryIO
+
+logger = logging.getLogger("tritongrader.runner")
+
 
 class CommandRunner:
     DEFAULT_TIMEOUT_MS = 5000.0
@@ -22,27 +27,33 @@ class CommandRunner:
             self.command = CommandRunner.QEMU_ARM + self.command
         else:
             self.command = command
-        
+
         self.capture_output = capture_output or print_output
         self.print_command = print_command
         self.print_output = print_output
         self.timeout_ms = timeout_ms
         self.text = text
         self.arm = arm
-        self.outfp: Optional[IO] = None
-        self.errfp: Optional[IO] = None
+        self.stdout_tf: Optional[str] = None
+        self.stderr_tf: Optional[str] = None
         self.running_time_ms: float = 0
         self.returncode = None
-    
+
+    def __del__(self):
+        if self.stdout_tf:
+            os.remove(self.stdout_tf)
+        if self.stderr_tf:
+            os.remove(self.stderr_tf)
+
     def print_text_file(self, fp: TextIO, heading=""):
         if heading:
             print(heading)
         while True:
-            line = fp.readline() 
+            line = fp.readline()
             if not line:
                 break
             print(line, end="")
-    
+
     def compare_text_files(self, fp1: TextIO, fp2: TextIO) -> bool:
         while True:
             line1 = fp1.readline()
@@ -51,50 +62,78 @@ class CommandRunner:
                 return False
             if not line1 or not line2:
                 break
+        fp1.seek(0)
+        fp2.seek(0)
         return True
 
     def compare_binary_files(self, fp1: BinaryIO, fp2: BinaryIO) -> bool:
-        # TODO: Handle binary stdout and stderr
-        return True
-    
+        return NotImplementedError
+
+    @property
+    def read_mode(self):
+        return "r" if self.text else "rb"
+
+    @property
+    def write_mode(self):
+        return "w" if self.text else "wb"
+
     def check_stdout(self, expected_stdout: str) -> bool:
-        with open(expected_stdout, "r" if self.text else "rb") as fp:
+        with (
+            open(self.stdout_tf, self.read_mode) as fp1,
+            open(expected_stdout, self.read_mode) as fp2,
+        ):
             if self.text:
-                return self.compare_text_files(self.outfp, fp)
+                return self.compare_text_files(fp1, fp2)
             else:
-                return self.compare_binary_files(self.outfp, fp)
-    
+                return self.compare_binary_files(fp1, fp2)
+
     def check_stderr(self, expected_stderr: str) -> bool:
-        with open(expected_stderr, "r" if self.text else "rb") as fp:
+        with (
+            open(self.stderr_tf, self.read_mode) as fp1,
+            open(expected_stderr, self.read_mode) as fp2,
+        ):
             if self.text:
-                return self.compare_text_files(self.errfp, fp)
+                return self.compare_text_files(fp1, fp2)
             else:
-                return self.compare_binary_files(self.errfp, fp)
-    
+                return self.compare_binary_files(fp1, fp2)
+
+    @property
+    def stdout(self):
+        if not self.capture_output:
+            raise Exception("stdout was not captured")
+        with open(self.stdout_tf, self.read_mode) as fp:
+            return fp.read()
+
+    @property
+    def stderr(self):
+        if not self.capture_output:
+            raise Exception("stderr was not captured")
+        with open(self.stderr_tf, self.read_mode) as fp:
+            return fp.read()
+
     def run(self):
         if self.capture_output:
-            self.outfp = NamedTemporaryFile("w+" if self.text else "w+b")
-            self.errfp = NamedTemporaryFile("w+" if self.text else "w+b")
-        
+            self.stdout_tf = NamedTemporaryFile(
+                "w+" if self.text else "w+b", delete=False
+            ).name
+            self.stderr_tf = NamedTemporaryFile(
+                "w+" if self.text else "w+b", delete=False
+            ).name
+            outfp = open(self.stdout_tf, self.write_mode)
+            errfp = open(self.stderr_tf, self.write_mode)
+
         if self.print_command:
             print(f"$ {self.command}")
-        
+
         start_ts = time.time()
         sp = subprocess.run(
             self.command,
             shell=True,
-            stdout=self.outfp if self.capture_output else None,
-            stderr=self.errfp if self.capture_output else None,
+            stdout=outfp if self.capture_output else None,
+            stderr=errfp if self.capture_output else None,
             text=self.text,
             timeout=self.timeout_ms / 1000,
         )
         end_ts = time.time()
         self.running_time_ms = (end_ts - start_ts) * 1000
         self.returncode = sp.returncode
-
-        if self.print_command:
-            if not self.text:
-                print("[binray output]")
-            self.print_text_file(self.outfp, heading="=== STDOUT ===")
-            self.print_text_file(self.errfp, heading="=== STDERR ===")
-        

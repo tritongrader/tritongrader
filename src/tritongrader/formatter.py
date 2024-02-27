@@ -15,7 +15,7 @@ class ResultsFormatterBase:
             CustomTestCase: self.format_custom_test,
         }
         self.test_cases: List[TestCaseBase] = []
-        ags = [src,] if isinstance(src, Autograder) else src
+        ags = [src] if isinstance(src, Autograder) else src
         for autograder in ags:
             self.test_cases.extend(autograder.test_cases)
 
@@ -44,6 +44,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         stdout_visibility: str = "hidden",
         hidden_tests_setting: str = "hidden",
         hide_points: bool = False,
+        max_output_bytes: int = 5000,
+        verbose: bool = True,
+        html_diff: bool = True,
     ):
         super().__init__(src)
         self.message = message
@@ -51,6 +54,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         self.stdout_visibility: str = stdout_visibility
         self.hidden_tests_setting: str = hidden_tests_setting
         self.hide_points: bool = hide_points
+        self.max_output_bytes: int = max_output_bytes
+        self.verbose: bool = verbose
+        self.html_diff: bool = html_diff
 
         self.rubric = {
             "output": self.message,
@@ -58,9 +64,74 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             "stdout_visibility": self.stdout_visibility,
         }
 
+    def html_diff(self, test: IOTestCase):
+        pass
+
+    def basic_output(self, test: IOTestCase):
+        if not test.result.has_run or not test.runner:
+            return "This test was not run."
+
+        if test.result.error:
+            return "\n".join(
+                "Unexpected runtime error!",
+                "== stdout ==",
+                test.actual_stdout,
+                "== stderr ==",
+                test.actual_stderr,
+            )
+        if test.result.timed_out:
+            return "\n".join(
+                f"Test case timed out. (limit={test.timeout})",
+                "== stdout ==",
+                test.actual_stdout,
+                "== stderr ==",
+                test.actual_stderr,
+            )
+
+        status_str = "PASSED" if test.result.passed else "FAILED"
+        summary = []
+        summary.append(f"{status_str} in {test.runner.running_time_ms:.2f} ms.")
+
+        # TODO: Verbose flag?
+        if self.verbose:
+            summary.extend(
+                [
+                    "== test command ==",
+                    test.command,
+                ]
+            )
+            # if test.runner.input:
+            #     summary.extend([
+            #         "== test input ==",
+            #         test.runner.input,
+            #     ])
+            summary.extend(
+                [
+                    "== expected stdout ==",
+                    test.expected_stdout,
+                    "== expected stderr ==",
+                    test.expected_stderr,
+                    f"Return value: {test.runner.returncode}",
+                    f"== actual stdout (max {self.max_output_bytes} bytes) ==",
+                    test.actual_stdout,
+                    f"== actual stderr (max {self.max_output_bytes} bytes) ==",
+                    test.actual_stderr,
+                ]
+            )
+
+        return "\n".join(summary)
+
     def format_io_test(self, test: IOTestCase):
+        output_format = "html" if self.html_diff else "simple_format"
+
+        if output_format == "html":
+            output = self.html_diff(test)
+        else:
+            output = self.basic_output(test)
+
         return {
-            "output": "gradescope: format_io_test",
+            "output_format": output_format,
+            "output": output,
             "input": "gradescope: format_io_test",
         }
 
