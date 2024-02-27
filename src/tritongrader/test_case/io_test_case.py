@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 
 from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
 from tritongrader.utils import run, get_countable_unit_string
+from tritongrader.runner import CommandRunner
 
 logger = logging.getLogger("tritongrader.test_case.io_test_case")
 
@@ -56,6 +57,7 @@ class IOTestCase(TestCaseBase):
         self.exp_stderr_binary: bytes = b""
 
         self.result: IOTestResult = IOTestResult()
+        self.runner: CommandRunner = None
 
     def __str__(self):
         return (
@@ -96,24 +98,13 @@ class IOTestCase(TestCaseBase):
             else:
                 self.input = in_fp.read()
         return self.input
-
-    def check_stdout(self):
-        with open(self.exp_stdout_path, self.open_mode()) as exp_stdout_fp:
-            if self.binary_io:
-                self.exp_stdout_binary = exp_stdout_fp.read()
-                return self.exp_stdout_binary == self.result.stdout_binary
-            else:
-                self.exp_stdout = exp_stdout_fp.read()
-                return self.exp_stdout == self.result.stdout
-
-    def check_stderr(self):
-        with open(self.exp_stderr_path, self.open_mode()) as exp_stderr_fp:
-            if self.binary_io:
-                self.exp_stderr_binary = exp_stderr_fp.read()
-                return self.exp_stderr_binary == self.result.stderr_binary
-            else:
-                self.exp_stderr = exp_stderr_fp.read()
-                return self.exp_stderr == self.result.stderr
+    
+    def check_output(self):
+        if not self.runner:
+            return False
+        stdout_check = self.runner.check_stdout(self.exp_stdout_path)
+        stderr_check = self.runner.check_stderr(self.exp_stderr_path)
+        return stdout_check and stderr_check
 
     def get_execute_command(self):
         self.command = self.extract_command_from_bash_file(self.command_path)
@@ -125,7 +116,7 @@ class IOTestCase(TestCaseBase):
         if self.input_path:
             exe += f" < {self.input_path}"
         return exe
-
+    
     def execute(self):
         # reset states
         self.result = IOTestResult()
@@ -133,31 +124,15 @@ class IOTestCase(TestCaseBase):
         # run test case
         self.result.has_run = True
         try:
-            exe_cmd = self.get_execute_command()
-            start_ts = time.time()
-            test = run(
-                exe_cmd,
+            self.runner = CommandRunner(
+                command=self.get_execute_command(),
                 capture_output=True,
-                print_command=True,
                 text=(not self.binary_io),
-                timeout=self.timeout,
-                arm=self.arm,
+                timeout_ms=self.timeout,
+                arm=self.arm
             )
-            end_ts = time.time()
-            self.result.running_time_ms = (end_ts - start_ts) * 1000
-            self.result.retcode = (
-                "EXIT_SUCCESS" if test.returncode == 0 else "EXIT_FAILURE"
-            )
-            if self.binary_io:
-                self.result.stderr_binary = test.stderr
-                self.result.stdout_binary = test.stdout
-            else:
-                self.result.stderr = test.stderr
-                self.result.stdout = test.stdout
-            stderr_ok = self.check_stderr()
-            stdout_ok = self.check_stdout()
-            # Do not directly AND the two check_stdXXX method calls because file read might be skipped!
-            self.result.passed = stderr_ok and stdout_ok
+            self.runner.run()
+            self.result.passed = self.check_output()
             self.result.score = self.point_value if self.result.passed else 0
         except subprocess.TimeoutExpired:
             logger.info(f"{self.name} timed out (limit={self.timeout}s)!")
@@ -199,7 +174,7 @@ class IOTestCase(TestCaseBase):
             self.stringify_binary_io()
 
         status_str = "PASSED" if self.result.passed else "FAILED"
-        summary = f"{status_str} in {self.result.running_time_ms:.2f} ms."
+        summary = f"{status_str} in {self.runner.running_time_ms:.2f} ms."
         if verbose or not self.result.passed:
             summary += (
                 f"\n==Test command==\n{self.command}\n"

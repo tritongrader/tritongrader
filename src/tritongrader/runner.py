@@ -49,7 +49,7 @@ class CommandRunner:
             line2 = fp2.readline()
             if line1 != line2:
                 return False
-            if not line1 or not line2:
+            if line1 is None or line2 is None:
                 break
         return True
 
@@ -77,7 +77,7 @@ class CommandRunner:
             self.errfp = NamedTemporaryFile("w+" if self.text else "w+b")
         
         if self.print_command:
-            print(f"$ self.command")
+            print(f"$ {self.command}")
         
         start_ts = time.time()
         sp = subprocess.run(
@@ -86,11 +86,11 @@ class CommandRunner:
             stdout=self.outfp if self.capture_output else None,
             stderr=self.errfp if self.capture_output else None,
             text=self.text,
-            arm=self.arm,
             timeout=self.timeout_ms / 1000,
         )
         end_ts = time.time()
         self.running_time_ms = (end_ts - start_ts) * 1000
+        self.returncode = sp.returncode
 
         if self.print_command:
             if not self.text:
@@ -98,5 +98,3 @@ class CommandRunner:
             self.print_text_file(self.outfp, heading="=== STDOUT ===")
             self.print_text_file(self.errfp, heading="=== STDERR ===")
         
-        self.outfp.close()
-        self.errfp.close()
