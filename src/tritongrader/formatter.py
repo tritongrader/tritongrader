@@ -77,6 +77,8 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         }
         if not self.hide_points:
             item["score"] = test.result.score
+        if test.point_value is not None:
+            item["max_score"] = test.point_value
         if test.result.passed is not None:
             item["status"] = test.result.passed
 
