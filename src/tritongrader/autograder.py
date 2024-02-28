@@ -122,7 +122,7 @@ class Autograder:
         )
 
     def check_missing_files(self) -> bool:
-		# TODO: Rewrite this as a test case
+        # TODO: Rewrite this as a test case
         logger.info("Checking missing files...")
         missing_files = []
         for filename in self.required_files:
@@ -173,7 +173,7 @@ class Autograder:
             self.copy2sandbox(self.tests_path, f)
 
     def compile_student_code(self) -> int:
-		# TODO: Rewrite this as a test case
+        # TODO: Rewrite this as a test case
         if self.compiled:
             return 0
 
@@ -226,7 +226,7 @@ class Autograder:
             test.execute()
             test.add_to_rubric(self.rubric, self.verbose_rubric)
 
-    def execute(self) -> Rubric:
+    def execute(self):
         logger.debug(platform.uname())
         logger.info(f"Running {self.name} test(s) in {self.sandbox.name}...")
         cwd = os.getcwd()
@@ -234,5 +234,3 @@ class Autograder:
         self._execute()
         logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
         os.chdir(cwd)
-
-        return self.rubric

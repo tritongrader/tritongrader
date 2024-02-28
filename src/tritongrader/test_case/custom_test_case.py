@@ -3,9 +3,8 @@ import traceback
 import logging
 import threading
 
-from typing import Callable, Optional, Tuple
+from typing import Callable
 
-from tritongrader.rubric import Rubric
 from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
 
 logger = logging.getLogger("tritongrader.test_case")
