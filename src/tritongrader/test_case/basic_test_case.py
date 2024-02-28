@@ -57,7 +57,7 @@ class BasicTestCase(TestCaseBase):
         )
         end_ts = time.time()
 
-        self.result.running_time_ms = (end_ts - start_ts) * 1000
+        self.result.running_time = (end_ts - start_ts) * 1000
         self.result.retcode = testproc.returncode
         self.result.passed = self.result.retcode == self.expected_retcode
 
@@ -77,14 +77,3 @@ class BasicTestCase(TestCaseBase):
             logger.info(f"{self.name} raised unexpected exception!\n{str(e)}")
             traceback.print_exc()
             self.result.error = True
-
-    def add_to_rubric(self, rubric, verbose=False):
-        rubric.add_item(
-            name=self.name,
-            score=self.result.score,
-            output=f"returncode={self.result.retcode}\n {self.result.stdout}\n {self.result.stderr}\n",
-            max_score=self.point_value,
-            passed=self.result.passed,
-            hidden=self.hidden,
-            running_time_ms=self.result.running_time_ms,
-        )

@@ -8,15 +8,14 @@ from typing import Tuple, List, Optional
 
 from tritongrader.utils import run
 from tritongrader.test_case import TestCaseBase, IOTestCaseBulkLoader
-from tritongrader.rubric import Rubric
 
 logger = logging.getLogger("tritongrader.autograder")
 
 
 class Autograder:
     """
-    An autograder object defines a single set of tests that can be applied to 
-    parts of an assignment that share a common set of source files and build 
+    An autograder object defines a single set of tests that can be applied to
+    parts of an assignment that share a common set of source files and build
     procedure (e.g. Makefile).
     """
 
@@ -62,8 +61,6 @@ class Autograder:
 
         self.test_cases: List[TestCaseBase] = []
 
-        self.rubric = Rubric(self.name)
-
         # A sandbox directory where submission and test files will be copied to.
         self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
 
@@ -81,7 +78,7 @@ class Autograder:
     def io_tests_bulk_loader(
         self,
         prefix: str = "",
-        default_timeout_ms: float = 500,
+        default_timeout: float = 1,
         binary_io: bool = False,
         commands_path: Optional[str] = None,
         test_input_path: Optional[str] = None,
@@ -120,11 +117,12 @@ class Autograder:
             expected_stdout_prefix=expected_stdout_prefix,
             expected_stderr_prefix=expected_stderr_prefix,
             prefix=prefix,
-            default_timeout_ms=default_timeout_ms,
+            default_timeout=default_timeout,
             binary_io=binary_io,
         )
 
     def check_missing_files(self) -> bool:
+		# TODO: Rewrite this as a test case
         logger.info("Checking missing files...")
         missing_files = []
         for filename in self.required_files:
@@ -175,6 +173,7 @@ class Autograder:
             self.copy2sandbox(self.tests_path, f)
 
     def compile_student_code(self) -> int:
+		# TODO: Rewrite this as a test case
         if self.compiled:
             return 0
 
@@ -214,7 +213,7 @@ class Autograder:
         )
 
         return compiler_process.returncode
-    
+
     def _execute(self):
         if not self.check_missing_files():
             return

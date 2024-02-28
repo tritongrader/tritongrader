@@ -4,19 +4,18 @@ class TestResultBase:
         self.passed: bool = False
         self.timed_out: bool = False
         self.error: bool = False
-        self.running_time_ms: float = None
+        self.running_time: float = None
         self.has_run: bool = False
 
 
 class TestCaseBase:
-    DEFAULT_TIMEOUT_MS = 100
-    DEFAULT_TIMEOUT_SECS = DEFAULT_TIMEOUT_MS / 1000
+    DEFAULT_TIMEOUT = 1 
 
     def __init__(
         self,
         name: str = "Test Case",
         point_value: float = 1,
-        timeout: float = DEFAULT_TIMEOUT_MS,
+        timeout: float = DEFAULT_TIMEOUT,
         hidden: bool = False,
     ):
         self.name: str = name

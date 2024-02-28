@@ -128,7 +128,7 @@ class IOTestCase(TestCaseBase):
                 command=self.get_execute_command(),
                 capture_output=True,
                 text=(not self.binary_io),
-                timeout_ms=self.timeout,
+                timeout=self.timeout,
                 print_command=True,
                 arm=self.arm,
             )
@@ -142,17 +142,6 @@ class IOTestCase(TestCaseBase):
             logger.info(f"{self.name} raised unexpected exception!\n{str(e)}")
             traceback.print_exc()
             self.result.error = True
-
-    def add_to_rubric(self, rubric, verbose=False):
-        rubric.add_item(
-            name=self.name,
-            score=self.result.score,
-            max_score=self.point_value,
-            output="output (add_to_rubric is deprecated!)",
-            passed=self.result.passed,
-            hidden=self.hidden,
-            running_time_ms=self.result.running_time_ms,
-        )
 
 
 class IOTestCaseBulkLoader:
@@ -168,7 +157,7 @@ class IOTestCaseBulkLoader:
         expected_stdout_prefix: Optional[str] = "out-",
         expected_stderr_prefix: Optional[str] = "err-",
         prefix: str = "",
-        default_timeout_ms: float = 500,
+        default_timeout: float = 500,
         binary_io: bool = False,
     ):
         self.autograder = autograder
@@ -181,7 +170,7 @@ class IOTestCaseBulkLoader:
         self.expected_stdout_prefix = expected_stdout_prefix
         self.expected_stderr_prefix = expected_stderr_prefix
         self.prefix = prefix
-        self.default_timeout_ms = default_timeout_ms
+        self.default_timeout = default_timeout
         self.binary_io = binary_io
 
     def add(
@@ -189,13 +178,13 @@ class IOTestCaseBulkLoader:
         name: str,
         point_value: float = 1,
         hidden: bool = False,
-        timeout_ms: float = None,
+        timeout: float = None,
         binary_io: bool = False,
         prefix: str = "",
         no_prefix: bool = False,
     ) -> "IOTestCaseBulkLoader":
-        if timeout_ms is None:
-            timeout_ms = self.default_timeout_ms
+        if timeout is None:
+            timeout = self.default_timeout
 
         cmd = os.path.join(self.commands_path, self.commands_prefix + name)
         stdin = os.path.join(self.test_input_path, self.test_input_prefix + name)
@@ -213,7 +202,7 @@ class IOTestCaseBulkLoader:
             input_path=stdin,
             exp_stdout_path=stdout,
             exp_stderr_path=stderr,
-            timeout=timeout_ms,
+            timeout=timeout,
             binary_io=binary_io,
             hidden=hidden,
             arm=self.autograder.arm,
@@ -228,10 +217,10 @@ class IOTestCaseBulkLoader:
         test_list: Tuple[str, float],
         prefix: str = "",
         hidden: bool = False,
-        timeout_ms: float = None,
+        timeout: float = None,
         binary_io: bool = False,
     ):
         for name, point_value in test_list:
-            self.add(name, point_value, hidden, timeout_ms, binary_io, prefix=prefix)
+            self.add(name, point_value, hidden, timeout, binary_io, prefix=prefix)
 
         return self

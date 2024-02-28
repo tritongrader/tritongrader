@@ -50,14 +50,3 @@ class CustomTestCase(TestCaseBase):
             traceback.print_exc()
             self.result.error = True
 
-    def add_to_rubric(self, rubric: Rubric, verbose=True):
-        rubric.add_item(
-            name=self.name,
-            score=self.result.score,
-            max_score=self.point_value,
-            output=self.result.output,
-            passed=self.result.passed,
-            hidden=self.hidden,
-            running_time_ms=self.result.running_time_ms,
-        )
-

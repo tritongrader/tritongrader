@@ -90,7 +90,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
 
         status_str = "PASSED" if test.result.passed else "FAILED"
         summary = []
-        summary.append(f"{status_str} in {test.runner.running_time_ms:.2f} ms.")
+        summary.append(f"{status_str} in {test.runner.running_time:.2f} ms.")
 
         if self.verbose:
             summary.extend(["== test command ==", test.command])

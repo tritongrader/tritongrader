@@ -58,7 +58,7 @@ if __name__ == "__main__":
 
     ag.io_tests_bulk_loader(
         prefix="Unit Tests - ",
-        default_timeout_ms=5000,
+        default_timeout=5,
         commands_prefix="cmd",
         test_input_prefix="test",
         expected_stderr_prefix="err",
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     ).add(
         "1",
         2,
-        timeout_ms=20000,
+        timeout=2,
         prefix="Public - ",
     ).add_list(
         [

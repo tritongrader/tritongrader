@@ -10,7 +10,7 @@ logger = logging.getLogger("tritongrader.runner")
 
 
 class CommandRunner:
-    DEFAULT_TIMEOUT_MS = 5000.0
+    DEFAULT_TIMEOUT = 1.0
     QEMU_ARM = "qemu-arm -L /usr/arm-linux-gnueabihf/ "
 
     def __init__(
@@ -19,7 +19,7 @@ class CommandRunner:
         capture_output: bool = False,
         print_command: bool = False,
         print_output: bool = False,
-        timeout_ms: float = DEFAULT_TIMEOUT_MS,
+        timeout: float = DEFAULT_TIMEOUT,
         text: bool = True,
         arm: bool = False,
     ):
@@ -31,12 +31,12 @@ class CommandRunner:
         self.capture_output = capture_output or print_output
         self.print_command = print_command
         self.print_output = print_output
-        self.timeout_ms = timeout_ms
+        self.timeout = timeout
         self.text = text
         self.arm = arm
         self.stdout_tf: Optional[str] = None
         self.stderr_tf: Optional[str] = None
-        self.running_time_ms: float = 0
+        self.running_time: float = 0
         self.returncode = None
 
     def __del__(self):
@@ -132,8 +132,8 @@ class CommandRunner:
             stdout=outfp if self.capture_output else None,
             stderr=errfp if self.capture_output else None,
             text=self.text,
-            timeout=self.timeout_ms / 1000,
+            timeout=self.timeout / 1000,
         )
         end_ts = time.time()
-        self.running_time_ms = (end_ts - start_ts) * 1000
+        self.running_time = end_ts - start_ts
         self.returncode = sp.returncode
