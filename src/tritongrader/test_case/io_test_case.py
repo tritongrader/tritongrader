@@ -6,6 +6,7 @@ import logging
 import subprocess
 
 from typing import Optional, Tuple
+from functools import cached_property
 
 from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
 from tritongrader.utils import run, get_countable_unit_string
@@ -57,18 +58,18 @@ class IOTestCase(TestCaseBase):
             + f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
         )
 
-    @property
+    @cached_property
     def open_mode(self):
         return "r" if not self.binary_io else "rb"
 
-    @property
+    @cached_property
     def expected_stdout(self):
         if not self.exp_stdout_path:
             return None
         with open(self.exp_stdout_path, self.open_mode) as fp:
             return fp.read()
 
-    @property
+    @cached_property
     def expected_stderr(self):
         if not self.exp_stderr_path:
             return None
@@ -92,16 +93,16 @@ class IOTestCase(TestCaseBase):
         with open(bash_file_path, "r") as cmd_fp:
             test_command = cmd_fp.read().split("\n")[1]
         return test_command
-
-    def read_test_input(self, input_file_path):
-        if not input_file_path:
-            return
-        with open(input_file_path, self.open_mode) as in_fp:
-            if self.binary_io:
-                self.input_binary = in_fp.read()
-            else:
-                self.input = in_fp.read()
-        return self.input
+    
+    @cached_property
+    def test_input(self):
+        if not self.input_path:
+            return None
+        
+        # test input is passed in via command line ('<'), which
+        # should always be text, so we don't use open_mode() here.
+        with open(self.input_path, "r") as fp:
+            return fp.read()
 
     def check_output(self):
         if not self.runner:
@@ -112,13 +113,12 @@ class IOTestCase(TestCaseBase):
 
     def get_execute_command(self):
         self.command = self.extract_command_from_bash_file(self.command_path)
-        self.read_test_input(self.input_path)
         logger.info(f"Running {str(self)}")
         # if running in an ARM simulator, we cannot use the bash script
         # and must instead use the command inside directly.
         exe = self.command if self.arm else self.command_path
-        if self.input_path:
-            exe += f" < {self.input_path}"
+        if self.test_input:
+            exe += f" < {self.test_input}"
         return exe
 
     def execute(self):

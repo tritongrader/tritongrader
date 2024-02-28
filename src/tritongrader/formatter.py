@@ -92,19 +92,11 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         summary = []
         summary.append(f"{status_str} in {test.runner.running_time_ms:.2f} ms.")
 
-        # TODO: Verbose flag?
         if self.verbose:
-            summary.extend(
-                [
-                    "== test command ==",
-                    test.command,
-                ]
-            )
-            # if test.runner.input:
-            #     summary.extend([
-            #         "== test input ==",
-            #         test.runner.input,
-            #     ])
+            summary.extend(["== test command ==", test.command])
+
+            if test.test_input is not None:
+                summary.extend(["== test input ==", test.runner.input])
             summary.extend(
                 [
                     "== expected stdout ==",
@@ -112,9 +104,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     "== expected stderr ==",
                     test.expected_stderr,
                     f"Return value: {test.runner.returncode}",
-                    f"== actual stdout (max {self.max_output_bytes} bytes) ==",
+                    f"== actual stdout ==",
                     test.actual_stdout,
-                    f"== actual stderr (max {self.max_output_bytes} bytes) ==",
+                    f"== actual stderr ==",
                     test.actual_stderr,
                 ]
             )
