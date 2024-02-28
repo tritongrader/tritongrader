@@ -21,7 +21,7 @@ class CustomTestCase(TestCaseBase):
         func: Callable[[CustomTestResult], None],
         name: str = "Test Case",
         point_value: float = 1,
-        timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
+        timeout: float = TestCaseBase.DEFAULT_TIMEOUT,
         hidden: bool = False,
     ):
         super().__init__(name, point_value, timeout, hidden)
