@@ -96,20 +96,25 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             summary.extend(["== test command ==", test.command])
 
             if test.test_input is not None:
-                summary.extend(["== test input ==", test.runner.input])
+                summary.extend(["== test input ==", test.test_input])
             summary.extend(
                 [
                     "== expected stdout ==",
                     test.expected_stdout,
                     "== expected stderr ==",
-                    test.expected_stderr,
-                    f"Return value: {test.runner.returncode}",
-                    f"== actual stdout ==",
-                    test.actual_stdout,
-                    f"== actual stderr ==",
-                    test.actual_stderr,
                 ]
             )
+            if not test.result.passed:
+                summary.extend(
+                    [
+                        test.expected_stderr,
+                        f"Return value: {test.runner.returncode}",
+                        f"== actual stdout ==",
+                        test.actual_stdout,
+                        f"== actual stderr ==",
+                        test.actual_stderr,
+                    ]
+                )
 
         return "\n".join(summary)
 
@@ -124,7 +129,6 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return {
             "output_format": output_format,
             "output": output,
-            "input": "gradescope: format_io_test",
         }
 
     def format_basic_test(self, result: BasicTestCase):

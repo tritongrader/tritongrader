@@ -1,15 +1,11 @@
 import os
-import time
 import traceback
-import binascii
 import logging
 import subprocess
 
 from typing import Optional, Tuple
-from functools import cached_property
 
 from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
-from tritongrader.utils import run, get_countable_unit_string
 from tritongrader.runner import CommandRunner
 
 logger = logging.getLogger("tritongrader.test_case.io_test_case")
@@ -58,18 +54,18 @@ class IOTestCase(TestCaseBase):
             + f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
         )
 
-    @cached_property
+    @property
     def open_mode(self):
         return "r" if not self.binary_io else "rb"
 
-    @cached_property
+    @property
     def expected_stdout(self):
         if not self.exp_stdout_path:
             return None
         with open(self.exp_stdout_path, self.open_mode) as fp:
             return fp.read()
 
-    @cached_property
+    @property
     def expected_stderr(self):
         if not self.exp_stderr_path:
             return None
@@ -93,12 +89,12 @@ class IOTestCase(TestCaseBase):
         with open(bash_file_path, "r") as cmd_fp:
             test_command = cmd_fp.read().split("\n")[1]
         return test_command
-    
-    @cached_property
+
+    @property
     def test_input(self):
         if not self.input_path:
             return None
-        
+
         # test input is passed in via command line ('<'), which
         # should always be text, so we don't use open_mode() here.
         with open(self.input_path, "r") as fp:
@@ -117,8 +113,8 @@ class IOTestCase(TestCaseBase):
         # if running in an ARM simulator, we cannot use the bash script
         # and must instead use the command inside directly.
         exe = self.command if self.arm else self.command_path
-        if self.test_input:
-            exe += f" < {self.test_input}"
+        if self.input_path:
+            exe += f" < {self.input_path}"
         return exe
 
     def execute(self):
@@ -133,6 +129,7 @@ class IOTestCase(TestCaseBase):
                 capture_output=True,
                 text=(not self.binary_io),
                 timeout_ms=self.timeout,
+                print_command=True,
                 arm=self.arm,
             )
             self.runner.run()
