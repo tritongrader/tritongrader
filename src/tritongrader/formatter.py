@@ -64,7 +64,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             "stdout_visibility": self.stdout_visibility,
         }
 
-    def html_diff(self, test: IOTestCase):
+    def generate_html_diff(self, test: IOTestCase):
         pass
 
     def basic_io_output(self, test: IOTestCase):
@@ -122,7 +122,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return {
             "output_format": "html" if self.html_diff else "simple_format",
             "output": (
-                self.html_diff(test) if self.html_diff else self.basic_io_output(test)
+                self.generate_html_diff(test)
+                if self.html_diff
+                else self.basic_io_output(test)
             ),
         }
 
