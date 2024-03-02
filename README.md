@@ -53,8 +53,10 @@ ag = Autograder(
 
 ### Creating Test Cases
 
-The library currently supports two types of test cases:
-I/O-based tests (`IOTestCase`) and custom tests (`CustomTestCase`).
+The library currently supports three types of test cases:
+- I/O-based tests (`IOTestCase`),
+- Basic return code-based tests (`BasicTestCase`), and
+- Custom tests (`CustomTestCase`).
 
 #### Basic Test Cases
 `BasicTestCase` runs a command in the terminal and evaluates the return code
@@ -147,13 +149,17 @@ The following code snippet executes the autograder and exports
 the results in the Gradescope JSON format:
 
 ```python
-rubric = ag.execute()
+from tritongrader.formatter import GradescopeResultsFormatter
 
-formatter = GradescopeRubricFormatter(
-    rubric,
-    message="tritongrader -- test",
-    hidden_tests_setting=GradescopeVisibility.AFTER_PUBLISHED,
+# execute the autograder to get test results
+ag.execute()
+
+formatter = GradescopeResultsFormatter(
+    src=ag,
+    message="tritongrader test",
+    hidden_tests_setting="after_published",
+    html_diff=True,
 )
 
-formatter.export("./results.json")
+formatter.execute()
 ```
