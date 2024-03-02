@@ -1,4 +1,3 @@
-import os
 import traceback
 import logging
 import threading
@@ -8,6 +7,7 @@ from typing import Callable
 from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
 
 logger = logging.getLogger("tritongrader.test_case")
+
 
 class CustomTestResult(TestResultBase):
     def __init__(self):
@@ -48,4 +48,3 @@ class CustomTestCase(TestCaseBase):
             logger.warn(f"{self.name} raised unexpected exception!\n{str(e)}")
             traceback.print_exc()
             self.result.error = True
-

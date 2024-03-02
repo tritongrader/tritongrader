@@ -4,7 +4,7 @@ import time
 import logging
 
 from tempfile import NamedTemporaryFile
-from typing import IO, TextIO, Optional, BinaryIO
+from typing import TextIO, Optional, BinaryIO
 
 logger = logging.getLogger("tritongrader.runner")
 
@@ -78,20 +78,18 @@ class CommandRunner:
         return "w" if self.text else "wb"
 
     def check_stdout(self, expected_stdout: str) -> bool:
-        with (
-            open(self.stdout_tf, self.read_mode) as fp1,
-            open(expected_stdout, self.read_mode) as fp2,
-        ):
+        fp1 = open(self.stdout_tf, self.read_mode)
+        fp2 = open(expected_stdout, self.read_mode)
+        with fp1, fp2:
             if self.text:
                 return self.compare_text_files(fp1, fp2)
             else:
                 return self.compare_binary_files(fp1, fp2)
 
     def check_stderr(self, expected_stderr: str) -> bool:
-        with (
-            open(self.stderr_tf, self.read_mode) as fp1,
-            open(expected_stderr, self.read_mode) as fp2,
-        ):
+        fp1 = open(self.stderr_tf, self.read_mode)
+        fp2 = open(expected_stderr, self.read_mode)
+        with fp1, fp2:
             if self.text:
                 return self.compare_text_files(fp1, fp2)
             else:

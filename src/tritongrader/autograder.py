@@ -4,7 +4,7 @@ import shutil
 import platform
 
 from tempfile import TemporaryDirectory
-from typing import Tuple, List, Optional
+from typing import List, Optional
 
 from tritongrader.test_case import (
     TestCaseBase,
@@ -39,16 +39,6 @@ class Autograder:
         missing_files_check: bool = True,
         arm=True,
     ):
-        """Autograder initializer.
-        Initializes fields and paths.
-
-        Args:
-            name (str, optional): name of this autograder. Defaults to "".
-            required_files (List[str], optional): submission files required by this autograder. Defaults to [].
-            supplied_files (List[str], optional): files supplied by the autograder solution. Defaults to [].
-            solution_dirname (str, optional): directory containing solution files and test files. Defaults to "".
-            verbose_rubric (bool, optional): if rubrics should contain verbose descriptions. Defaults to False.
-        """
         self.name = name
 
         self.tests_path = tests_path

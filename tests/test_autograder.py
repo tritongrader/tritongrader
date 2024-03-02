@@ -1,8 +1,11 @@
-# This is fairly janky, but it works.
 import os
+import pprint
 import sys
 
-sys.path.append(os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src"))
+# This is fairly janky, but it works.
+sys.path.append(
+    os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src")
+)
 
 #
 # The following is how a grading script using the tritongrader
@@ -10,11 +13,14 @@ sys.path.append(os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "
 # the library evolves.
 #
 
-import pprint
 
 from tritongrader.autograder import Autograder  # noqa
 from tritongrader.formatter import GradescopeResultsFormatter  # noqa
-from tritongrader.test_case import CustomTestCase, CustomTestResult, BasicTestCase  # noqa
+from tritongrader.test_case import ( # noqa
+    CustomTestCase,
+    CustomTestResult,
+    BasicTestCase,
+)
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
@@ -48,7 +54,7 @@ if __name__ == "__main__":
     ag.add_test(custom_test)
 
     basic_test = BasicTestCase(
-        "echo \"Hello World\"",
+        'echo "Hello World"',
         name="Hello world!",
         point_value=5,
         arm=False,

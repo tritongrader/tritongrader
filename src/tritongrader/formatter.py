@@ -109,9 +109,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     [
                         test.expected_stderr,
                         f"Return value: {test.runner.returncode}",
-                        f"== actual stdout ==",
+                        "== actual stdout ==",
                         test.actual_stdout,
-                        f"== actual stderr ==",
+                        "== actual stderr ==",
                         test.actual_stderr,
                     ]
                 )
