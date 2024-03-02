@@ -1,7 +1,8 @@
-# This is fairly janky, but it works.
 import os
+import pprint
 import sys
 
+# This is fairly janky, but it works.
 sys.path.append(
     os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "/../src")
 )
@@ -12,12 +13,14 @@ sys.path.append(
 # the library evolves.
 #
 
-import pprint
 
 from tritongrader.autograder import Autograder  # noqa
-from tritongrader.rubric import GradescopeRubricFormatter  # noqa
-from tritongrader.visibility import GradescopeVisibility  # noqa
-from tritongrader.test_case import CustomTestCase, CustomTestCaseResult  # noqa
+from tritongrader.formatter import GradescopeResultsFormatter  # noqa
+from tritongrader.test_case import ( # noqa
+    CustomTestCase,
+    CustomTestResult,
+    BasicTestCase,
+)
 
 if __name__ == "__main__":
     example_dir = os.path.realpath(os.path.dirname(__file__)) + "/example/"
@@ -32,7 +35,7 @@ if __name__ == "__main__":
         arm=False,
     )
 
-    def test_num_lines(result: CustomTestCaseResult):
+    def test_num_lines(result: CustomTestResult):
         line_count = 0
         with open("./palindrome.c", "r") as fp:
             line_count = len(fp.readlines())
@@ -50,9 +53,18 @@ if __name__ == "__main__":
 
     ag.add_test(custom_test)
 
+    basic_test = BasicTestCase(
+        'echo "Hello World"',
+        name="Hello world!",
+        point_value=5,
+        arm=False,
+    )
+
+    ag.add_test(basic_test)
+
     ag.io_tests_bulk_loader(
         prefix="Unit Tests - ",
-        default_timeout_ms=5000,
+        default_timeout=5,
         commands_prefix="cmd",
         test_input_prefix="test",
         expected_stderr_prefix="err",
@@ -60,23 +72,28 @@ if __name__ == "__main__":
     ).add(
         "1",
         2,
-        timeout_ms=20000,
+        timeout=2,
         prefix="Public - ",
     ).add_list(
         [
             ("2", 4),
             ("3", 4),
             ("4", 4),
+            ("5", 6),
+            ("6", 6),
+            ("7", 6),
         ],
         prefix="Hidden - ",
         hidden=True,
     )
 
-    formatter = GradescopeRubricFormatter(
-        ag.execute(),
-        message="tritongrader -- test",
-        hidden_tests_setting=GradescopeVisibility.AFTER_PUBLISHED,
+    ag.execute()
+
+    formatter = GradescopeResultsFormatter(
+        src=ag,
+        message="tritongrader test",
+        hidden_tests_setting="after_published",
+        html_diff=False,
     )
 
-    pprint.pprint(formatter.as_dict())
-    formatter.export(f"{example_dir}/results.json")
+    pprint.pprint(formatter.execute())
