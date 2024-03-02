@@ -147,13 +147,17 @@ The following code snippet executes the autograder and exports
 the results in the Gradescope JSON format:
 
 ```python
-rubric = ag.execute()
+from tritongrader.formatter import GradescopeResultsFormatter
 
-formatter = GradescopeRubricFormatter(
-    rubric,
-    message="tritongrader -- test",
-    hidden_tests_setting=GradescopeVisibility.AFTER_PUBLISHED,
+# execute the autograder to get test results
+ag.execute()
+
+formatter = GradescopeResultsFormatter(
+    src=ag,
+    message="tritongrader test",
+    hidden_tests_setting="after_published",
+    html_diff=True,
 )
 
-formatter.export("./results.json")
+formatter.execute()
 ```
