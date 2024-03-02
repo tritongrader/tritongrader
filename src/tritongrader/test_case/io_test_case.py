@@ -28,7 +28,7 @@ class IOTestCase(TestCaseBase):
         exp_stderr_path: str,
         name: str = "Test Case",
         point_value: float = 1,
-        timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
+        timeout: float = TestCaseBase.DEFAULT_TIMEOUT,
         arm: bool = True,
         binary_io: bool = False,
         hidden: bool = False,

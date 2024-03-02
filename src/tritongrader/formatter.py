@@ -58,7 +58,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         self.verbose: bool = verbose
         self.html_diff: bool = html_diff
 
-        self.rubric = {
+        self.results = {
             "output": self.message,
             "visibility": self.visibility,
             "stdout_visibility": self.stdout_visibility,
@@ -67,7 +67,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
     def html_diff(self, test: IOTestCase):
         pass
 
-    def basic_output(self, test: IOTestCase):
+    def basic_io_output(self, test: IOTestCase):
         if not test.result.has_run or not test.runner:
             return "This test was not run."
 
@@ -119,23 +119,38 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return "\n".join(summary)
 
     def format_io_test(self, test: IOTestCase):
-        output_format = "html" if self.html_diff else "simple_format"
-
-        if output_format == "html":
-            output = self.html_diff(test)
-        else:
-            output = self.basic_output(test)
-
         return {
-            "output_format": output_format,
-            "output": output,
+            "output_format": "html" if self.html_diff else "simple_format",
+            "output": (
+                self.html_diff(test) if self.html_diff else self.basic_io_output(test)
+            ),
         }
 
-    def format_basic_test(self, result: BasicTestCase):
-        return {"output": "gradescope: format_basic_test"}
+    def format_basic_test(self, test: BasicTestCase):
+        summary = []
+        summary.extend(
+            [
+                "== test command ==",
+                test.command,
+                "== return code ==",
+                str(test.runner.returncode),
+            ]
+        )
+        if self.verbose:
+            summary.extend(
+                [
+                    "== stdout ==",
+                    test.runner.stdout,
+                    "== stderr ==",
+                    test.runner.stderr,
+                ]
+            )
+        return {"output": "\n".join(summary)}
 
-    def format_custom_test(self, result: CustomTestCase):
-        return {"output": "gradescope: format_custom_test"}
+    def format_custom_test(self, test: CustomTestCase):
+        return {
+            "output": test.result.output,
+        }
 
     def format_test(self, test: TestCaseBase):
         item = {
@@ -147,7 +162,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         if test.point_value is not None:
             item["max_score"] = test.point_value
         if test.result.passed is not None:
-            item["status"] = test.result.passed
+            item["status"] = "passed" if test.result.passed else "failed"
 
         item.update(super().format_test(test))
         return item
@@ -156,15 +171,15 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return sum(i.result.score for i in self.test_cases)
 
     def execute(self):
-        self.rubric.update(
+        self.results.update(
             {
                 "score": self.get_total_score(),
                 "tests": [self.format_test(i) for i in self.test_cases],
             }
         )
         if self.hide_points:
-            self.rubric["score"] = 0
-        return self.rubric
+            self.results["score"] = 0
+        return self.results
 
 
 if __name__ == "__main__":

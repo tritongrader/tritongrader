@@ -26,9 +26,9 @@ class CustomTestCase(TestCaseBase):
     ):
         super().__init__(name, point_value, timeout, hidden)
         self.test_func: Callable[[CustomTestResult], bool] = func
+        self.result: CustomTestResult = CustomTestResult()
 
     def execute(self):
-        self.result = CustomTestResult()
         self.result.has_run = True
 
         try:

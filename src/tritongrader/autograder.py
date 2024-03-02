@@ -6,8 +6,13 @@ import platform
 from tempfile import TemporaryDirectory
 from typing import Tuple, List, Optional
 
-from tritongrader.utils import run
-from tritongrader.test_case import TestCaseBase, IOTestCaseBulkLoader
+from tritongrader.test_case import (
+    TestCaseBase,
+    IOTestCaseBulkLoader,
+    BasicTestCase,
+    CustomTestCase,
+    CustomTestResult,
+)
 
 logger = logging.getLogger("tritongrader.autograder")
 
@@ -31,7 +36,7 @@ class Autograder:
         verbose_rubric: bool = False,
         build_command: str = None,
         compile_points: int = 0,
-        show_missing_files_check: bool = True,
+        missing_files_check: bool = True,
         arm=True,
     ):
         """Autograder initializer.
@@ -54,15 +59,60 @@ class Autograder:
         self.supplied_files = supplied_files
         self.verbose_rubric = verbose_rubric
         self.compile_points = compile_points
-        self.show_missing_files_check = show_missing_files_check
-
-        self.build_command = build_command
-        self.compiled = False
 
         self.test_cases: List[TestCaseBase] = []
 
         # A sandbox directory where submission and test files will be copied to.
         self.sandbox: TemporaryDirectory = self.create_sandbox_directory()
+
+        self.missing_files_check_test_case = None
+        if missing_files_check:
+            self.missing_files_check_test_case: CustomTestCase = (
+                self.create_missing_files_check_test_case(required_files)
+            )
+            self.add_test(self.missing_files_check_test_case)
+
+        self.build_test_case = None
+        if build_command:
+            self.build_test_case: BasicTestCase = self.create_build_test_case(
+                build_command, compile_points
+            )
+            self.add_test(self.build_test_case)
+
+    def create_missing_files_check_test_case(
+        self, required_files: List[str]
+    ) -> CustomTestCase:
+
+        def check_missing_files(result: CustomTestResult):
+            logger.info("Checking missing files...")
+            missing_files = []
+            for filename in required_files:
+                fpath = os.path.join(self.submission_path, filename)
+                if not os.path.exists(fpath):
+                    missing_files.append(filename)
+            if not missing_files:
+                result.output = "All required files have been located."
+                result.passed = True
+            else:
+                result.output = "\n".join(
+                    [
+                        "Missing files",
+                    ].extend(missing_files)
+                )
+                result.passed = False
+
+        return CustomTestCase(
+            check_missing_files, name="Missing Files Check", point_value=0
+        )
+
+    def create_build_test_case(self, build_command, point_value=0) -> BasicTestCase:
+        return BasicTestCase(
+            command=build_command,
+            name="Compiling",
+            point_value=point_value,
+            expected_retcode=0,
+            arm=False,
+        )
 
     def create_sandbox_directory(self) -> str:
         tmpdir = TemporaryDirectory(prefix="Autograder_")
@@ -121,28 +171,6 @@ class Autograder:
             binary_io=binary_io,
         )
 
-    def check_missing_files(self) -> bool:
-        # TODO: Rewrite this as a test case
-        logger.info("Checking missing files...")
-        missing_files = []
-        for filename in self.required_files:
-            fpath = os.path.join(self.submission_path, filename)
-            if not os.path.exists(fpath):
-                missing_files.append(filename)
-        if self.show_missing_files_check:
-            if not missing_files:
-                self.rubric.add_item(
-                    name="Missing Files Check",
-                    output="All required files have been located.",
-                )
-            else:
-                self.rubric.add_item(
-                    name="Missing Files Check",
-                    output="Missing files:\n" + "\n".join(missing_files),
-                    passed=False,
-                )
-        return len(missing_files) == 0
-
     def get_default_build_command(self):
         return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
 
@@ -172,59 +200,20 @@ class Autograder:
         for f in self.supplied_files:
             self.copy2sandbox(self.tests_path, f)
 
-    def compile_student_code(self) -> int:
-        # TODO: Rewrite this as a test case
-        if self.compiled:
-            return 0
-
-        logger.info(f"Compiling student code (arm={self.arm})...")
-
+    def _execute(self):
         self.copy_submission_files()
         self.copy_supplied_files()
 
-        os.chdir(self.sandbox.name)
-
-        build_cmd = self.get_build_command()
-        logger.debug(f"build_cmd: {build_cmd}")
-        compiler_process = run(build_cmd, capture_output=True, text=True)
-        compiled = compiler_process.returncode == 0
-        if compiled:
-            logger.info("Student code compiled successfully.")
-            self.compiled = True
-        else:
-            logger.info(
-                "Student code failed to compile "
-                + f"(returncode={compiler_process.returncode}):\n"
-                + str(compiler_process.stderr)
-            )
-            self.compiled = False
-
-        # Generate rubric item for compiling
-        rubric_title = "Compiling"
-
-        rubric_output = compiler_process.stdout + "\n" + compiler_process.stderr + "\n"
-
-        self.rubric.add_item(
-            name=rubric_title,
-            score=self.compile_points if self.compiled else 0,
-            max_score=self.compile_points if self.compile_points > 0 else None,
-            passed=self.compiled if self.compile_points > 0 else None,
-            output=rubric_output,
-        )
-
-        return compiler_process.returncode
-
-    def _execute(self):
-        if not self.check_missing_files():
-            return
-
-        if self.compile_student_code() != 0:
-            logger.info(f"Skipping {self.name} test(s) due to failed compilation.")
-            return
-
         for test in self.test_cases:
             test.execute()
-            test.add_to_rubric(self.rubric, self.verbose_rubric)
+
+            if test == self.missing_files_check_test_case and not test.result.passed:
+                logger.info("Some files are missing. Aborting autograder.")
+                break
+
+            if test == self.build_test_case and not test.result.passed:
+                logger.info("Failed to compile. Aborting autograder.")
+                break
 
     def execute(self):
         logger.debug(platform.uname())

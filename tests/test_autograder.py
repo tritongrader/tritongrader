@@ -13,7 +13,7 @@ sys.path.append(os.path.realpath(os.path.realpath(os.path.dirname(__file__)) + "
 import pprint
 
 from tritongrader.autograder import Autograder  # noqa
-from tritongrader.formatter import GradescopeResultsFormatter
+from tritongrader.formatter import GradescopeResultsFormatter  # noqa
 from tritongrader.test_case import CustomTestCase, CustomTestResult, BasicTestCase  # noqa
 
 if __name__ == "__main__":

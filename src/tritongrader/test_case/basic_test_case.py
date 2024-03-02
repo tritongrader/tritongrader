@@ -1,10 +1,9 @@
 import logging
 import subprocess
-import time
 import traceback
 
 from tritongrader.test_case.test_case_base import TestCaseBase, TestResultBase
-from tritongrader.utils import run
+from tritongrader.runner import CommandRunner
 
 logger = logging.getLogger("tritongrader.test_case.basic_test_case")
 
@@ -29,7 +28,7 @@ class BasicTestCase(TestCaseBase):
         name: str = "Test Case",
         point_value: float = 1,
         expected_retcode: int = 0,
-        timeout: float = TestCaseBase.DEFAULT_TIMEOUT_SECS,
+        timeout: float = TestCaseBase.DEFAULT_TIMEOUT,
         arm: bool = True,
         binary_io: bool = False,
         hidden: bool = False,
@@ -43,26 +42,18 @@ class BasicTestCase(TestCaseBase):
         self.expected_retcode: int = expected_retcode
 
         self.result: BasicTestResult = None
+        self.runner: CommandRunner = None
 
     def _execute(self):
         self.result.has_run = True
-        start_ts = time.time()
-        testproc = run(
-            self.command,
+        self.runner = CommandRunner(
+            command=self.command,
             capture_output=True,
-            print_command=True,
-            text=(not self.binary_io),
             timeout=self.timeout,
             arm=self.arm,
         )
-        end_ts = time.time()
-
-        self.result.running_time = (end_ts - start_ts) * 1000
-        self.result.retcode = testproc.returncode
-        self.result.passed = self.result.retcode == self.expected_retcode
-
-        self.result.stdout = testproc.stdout
-        self.result.stderr = testproc.stderr
+        self.runner.run()
+        self.result.passed = self.runner.returncode == self.expected_retcode
         self.result.score = self.point_value if self.result.passed else 0
 
     def execute(self):

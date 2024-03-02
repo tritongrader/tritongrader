@@ -132,7 +132,7 @@ class CommandRunner:
             stdout=outfp if self.capture_output else None,
             stderr=errfp if self.capture_output else None,
             text=self.text,
-            timeout=self.timeout / 1000,
+            timeout=self.timeout,
         )
         end_ts = time.time()
         self.running_time = end_ts - start_ts
