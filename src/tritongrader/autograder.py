@@ -38,6 +38,7 @@ class Autograder:
         compile_points: int = 0,
         missing_files_check: bool = True,
         arm=True,
+        interpreter: str = "qemu-arm -L /usr/arm-linux-gnueabihf/",
     ):
         self.name = name
 
@@ -45,6 +46,7 @@ class Autograder:
         self.submission_path = submission_path
 
         self.arm = arm
+        self.interpreter = interpreter
         self.required_files = required_files
         self.supplied_files = supplied_files
         self.verbose_rubric = verbose_rubric
@@ -102,6 +104,7 @@ class Autograder:
             point_value=point_value,
             expected_retcode=0,
             arm=False,
+            interpreter=self.interpreter,
         )
 
     def create_sandbox_directory(self) -> str:

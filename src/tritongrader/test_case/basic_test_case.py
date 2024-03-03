@@ -30,12 +30,14 @@ class BasicTestCase(TestCaseBase):
         expected_retcode: int = 0,
         timeout: float = TestCaseBase.DEFAULT_TIMEOUT,
         arm: bool = True,
+        interpreter: str = "",
         binary_io: bool = False,
         hidden: bool = False,
     ):
         super().__init__(name, point_value, timeout, hidden)
 
         self.arm: bool = arm
+        self.interpreter: str = interpreter
         self.binary_io: bool = binary_io
 
         self.command: str = command

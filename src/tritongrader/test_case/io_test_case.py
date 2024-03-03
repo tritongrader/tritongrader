@@ -30,12 +30,14 @@ class IOTestCase(TestCaseBase):
         point_value: float = 1,
         timeout: float = TestCaseBase.DEFAULT_TIMEOUT,
         arm: bool = True,
+        interpreter: str = "",
         binary_io: bool = False,
         hidden: bool = False,
     ):
         super().__init__(name, point_value, timeout, hidden)
 
         self.arm: bool = arm
+        self.interpreter: str = interpreter
         self.binary_io: bool = binary_io
 
         self.command_path: str = command_path
@@ -131,6 +133,7 @@ class IOTestCase(TestCaseBase):
                 timeout=self.timeout,
                 print_command=True,
                 arm=self.arm,
+                interpreter=self.interpreter,
             )
             self.runner.run()
             self.result.passed = self.check_output()
@@ -206,6 +209,7 @@ class IOTestCaseBulkLoader:
             binary_io=binary_io,
             hidden=hidden,
             arm=self.autograder.arm,
+            interpreter=self.autograder.interpreter,
         )
 
         self.autograder.add_test(test_case)
