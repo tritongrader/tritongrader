@@ -1,4 +1,4 @@
-from typing import Dict, Callable, List, Union, Iterable
+from typing import Dict, Callable, List, Union, Iterable, Tuple, Optional
 from tritongrader import Autograder
 
 from tritongrader.test_case import TestCaseBase
@@ -47,6 +47,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         max_output_bytes: int = 5000,
         verbose: bool = True,
         html_diff: bool = True,
+        leaderboard: List[Tuple[str, Optional[Union[int, float, str]], Optional[str]]] = None,
     ):
         super().__init__(src)
         self.message = message
@@ -57,6 +58,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         self.max_output_bytes: int = max_output_bytes
         self.verbose: bool = verbose
         self.html_diff: bool = html_diff
+        self.leaderboard: List[Tuple[str, Optional[Union[int, float, str]], Optional[str]]] = leaderboard
 
         self.results = {
             "output": self.message,
@@ -181,6 +183,16 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         )
         if self.hide_points:
             self.results["score"] = 0
+        if self.leaderboard:
+            self.results["leaderboard"] = []
+            for name, value, order in self.leaderboard:
+                entry = {"name": name}
+                if value is not None:
+                    entry["value"] = value
+                if order is not None:
+                    entry["order"] = order
+                self.results["leaderboard"].append(entry)
+
         return self.results
 
 
