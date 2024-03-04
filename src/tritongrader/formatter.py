@@ -65,7 +65,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         }
 
     def generate_html_diff(self, test: IOTestCase):
-        pass
+        return "html diff has not been implemented yet."
 
     def basic_io_output(self, test: IOTestCase):
         if not test.result.has_run or not test.runner:
