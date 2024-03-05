@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Dict, Callable, List, Union, Iterable
 from difflib import HtmlDiff
 from tritongrader import Autograder
@@ -7,6 +8,8 @@ from tritongrader.test_case import TestCaseBase
 from tritongrader.test_case import IOTestCase
 from tritongrader.test_case import BasicTestCase
 from tritongrader.test_case import CustomTestCase
+
+logger = logging.getLogger("tritongrader.formatter")
 
 
 class ResultsFormatterBase:
@@ -212,6 +215,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return sum(i.result.score for i in self.test_cases)
 
     def execute(self):
+        logger.info("Formatter running...")
         self.results = {
             "output": self.message,
             "visibility": self.visibility,
@@ -222,6 +226,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
 
         if self.hide_points:
             self.results["score"] = 0
+        logger.info("Formatter execution completed.")
         return self.results
 
     def export(self, path="/autograder/results/results.json"):
