@@ -24,7 +24,7 @@ class CommandRunner:
         arm: bool = False,
     ):
         if arm:
-            self.command = CommandRunner.QEMU_ARM + self.command
+            self.command = CommandRunner.QEMU_ARM + command
         else:
             self.command = command
 
