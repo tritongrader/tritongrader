@@ -92,11 +92,13 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         )
         html = "\n".join(
             [
-                "<h1>return code</h1>",
+                "<h2>return code</h2>",
                 str(test.runner.returncode),
-                "<h1>stdout</h1>",
+                "<hr>",
+                "<h2>stdout</h2>",
                 stdout_diff,
-                "<h1>stderr</h1>",
+                "<hr>",
+                "<h2>stderr</h2>",
                 stderr_diff,
             ]
         )
