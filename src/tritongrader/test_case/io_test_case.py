@@ -195,8 +195,9 @@ class IOTestCaseBulkLoader:
             self.expected_stderr_path, self.expected_stderr_prefix + name
         )
 
+        test_name = name if no_prefix else self.prefix + prefix + name
         test_case = IOTestCase(
-            name=name if no_prefix else self.prefix + prefix + name,
+            name=f"{self.autograder.name}: {test_name}",
             point_value=point_value,
             command_path=cmd,
             input_path=stdin,
