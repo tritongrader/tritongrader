@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Callable, List, Union, Iterable
 from difflib import HtmlDiff
 from tritongrader import Autograder
@@ -58,12 +59,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         self.max_output_bytes: int = max_output_bytes
         self.verbose: bool = verbose
         self.html_diff: bool = html_diff
-
-        self.results = {
-            "output": self.message,
-            "visibility": self.visibility,
-            "stdout_visibility": self.stdout_visibility,
-        }
+        self.results: dict = None
 
     def html_diff_make_table(
         self,
@@ -212,15 +208,21 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return sum(i.result.score for i in self.test_cases)
 
     def execute(self):
-        self.results.update(
-            {
-                "score": self.get_total_score(),
-                "tests": [self.format_test(i) for i in self.test_cases],
-            }
-        )
+        self.results = {
+            "output": self.message,
+            "visibility": self.visibility,
+            "stdout_visibility": self.stdout_visibility,
+            "score": self.get_total_score(),
+            "tests": [self.format_test(i) for i in self.test_cases],
+        }
+
         if self.hide_points:
             self.results["score"] = 0
         return self.results
+    
+    def export(self, path="/autograder/results/results.json"):
+        with open(path, "w+") as fp:
+            json.dump(self.execute(), fp)
 
 
 if __name__ == "__main__":
