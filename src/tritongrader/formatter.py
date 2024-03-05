@@ -1,4 +1,5 @@
 from typing import Dict, Callable, List, Union, Iterable
+from difflib import HtmlDiff
 from tritongrader import Autograder
 
 from tritongrader.test_case import TestCaseBase
@@ -64,8 +65,46 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             "stdout_visibility": self.stdout_visibility,
         }
 
+    def html_diff_make_table(
+        self,
+        fromtext: str,
+        totext: str,
+        fromdesc: str = "",
+        todesc: str = "",
+    ):
+        return HtmlDiff(tabsize=2, wrapcolumn=80).make_table(
+            fromlines=fromtext.split("\n"),
+            tolines=totext.split("\n"),
+            fromdesc=fromdesc,
+            todesc=todesc,
+            context=True,
+            numlines=3,
+        )
+
     def generate_html_diff(self, test: IOTestCase):
-        return "html diff has not been implemented yet."
+        stdout_diff = self.html_diff_make_table(
+            fromtext=test.actual_stdout or "",
+            totext=test.expected_stdout or "",
+            fromdesc="Actual stdout",
+            todesc="Expected stdout",
+        )
+        stderr_diff = self.html_diff_make_table(
+            fromtext=test.actual_stderr or "",
+            totext=test.expected_stderr or "",
+            fromdesc="Actual stderr",
+            todesc="Expected stderr",
+        )
+        html = "\n".join(
+            [
+                "<h1>return code</h1>",
+                str(test.runner.returncode),
+                "<h1>stdout</h1>",
+                stdout_diff,
+                "<h1>stderr</h1>",
+                stderr_diff,
+            ]
+        )
+        return html
 
     def basic_io_output(self, test: IOTestCase):
         if not test.result.has_run or not test.runner:

@@ -73,13 +73,13 @@ class IOTestCase(TestCaseBase):
             return fp.read()
 
     @property
-    def actual_stdout(self):
+    def actual_stdout(self) -> str:
         if not self.runner:
             raise Exception("no runner initialized")
         return self.runner.stdout
 
     @property
-    def actual_stderr(self):
+    def actual_stderr(self) -> str:
         if not self.runner:
             raise Exception("no runner initialized")
         return self.runner.stderr
