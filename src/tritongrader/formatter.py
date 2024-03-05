@@ -90,8 +90,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             fromdesc="Actual stderr",
             todesc="Expected stderr",
         )
-        html = "\n".join(
+        html = "".join(
             [
+                "<div>",
                 "<h2>return code</h2>",
                 str(test.runner.returncode),
                 "<hr>",
@@ -100,6 +101,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                 "<hr>",
                 "<h2>stderr</h2>",
                 stderr_diff,
+                "</div>",
             ]
         )
         return html
@@ -221,7 +223,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         if self.hide_points:
             self.results["score"] = 0
         return self.results
-    
+
     def export(self, path="/autograder/results/results.json"):
         with open(path, "w+") as fp:
             json.dump(self.execute(), fp)
