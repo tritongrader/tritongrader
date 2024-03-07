@@ -84,11 +84,7 @@ class Autograder:
                 result.output = "All required files have been located."
                 result.passed = True
             else:
-                result.output = "\n".join(
-                    [
-                        "Missing files",
-                    ].extend(missing_files)
-                )
+                result.output = "\n".join(["Missing files"] + missing_files)
                 result.passed = False
 
         return CustomTestCase(
