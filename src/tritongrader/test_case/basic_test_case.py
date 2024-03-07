@@ -41,7 +41,7 @@ class BasicTestCase(TestCaseBase):
         self.command: str = command
         self.expected_retcode: int = expected_retcode
 
-        self.result: BasicTestResult = None
+        self.result: BasicTestResult = BasicTestResult()
         self.runner: CommandRunner = None
 
     def _execute(self):
