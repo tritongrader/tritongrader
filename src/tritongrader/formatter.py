@@ -73,19 +73,23 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
 
         if test.result.error:
             return "\n".join(
-                "Unexpected runtime error!",
-                "== stdout ==",
-                test.actual_stdout,
-                "== stderr ==",
-                test.actual_stderr,
+                [
+                    "Unexpected runtime error!",
+                    "== stdout ==",
+                    test.actual_stdout,
+                    "== stderr ==",
+                    test.actual_stderr,
+                ]
             )
         if test.result.timed_out:
             return "\n".join(
-                f"Test case timed out. (limit={test.timeout})",
-                "== stdout ==",
-                test.actual_stdout,
-                "== stderr ==",
-                test.actual_stderr,
+                [
+                    f"Test case timed out. (limit={test.timeout})",
+                    "== stdout ==",
+                    test.actual_stdout,
+                    "== stderr ==",
+                    test.actual_stderr,
+                ]
             )
 
         status_str = "PASSED" if test.result.passed else "FAILED"
