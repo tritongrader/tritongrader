@@ -1,10 +1,15 @@
+import json
+import logging
 from typing import Dict, Callable, List, Union, Iterable
+from difflib import HtmlDiff
 from tritongrader import Autograder
 
 from tritongrader.test_case import TestCaseBase
 from tritongrader.test_case import IOTestCase
 from tritongrader.test_case import BasicTestCase
 from tritongrader.test_case import CustomTestCase
+
+logger = logging.getLogger("tritongrader.formatter")
 
 
 class ResultsFormatterBase:
@@ -57,15 +62,52 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         self.max_output_bytes: int = max_output_bytes
         self.verbose: bool = verbose
         self.html_diff: bool = html_diff
+        self.results: dict = None
 
-        self.results = {
-            "output": self.message,
-            "visibility": self.visibility,
-            "stdout_visibility": self.stdout_visibility,
-        }
+    def html_diff_make_table(
+        self,
+        fromtext: str,
+        totext: str,
+        fromdesc: str = "",
+        todesc: str = "",
+    ):
+        return HtmlDiff(tabsize=2, wrapcolumn=80).make_table(
+            fromlines=fromtext.split("\n"),
+            tolines=totext.split("\n"),
+            fromdesc=fromdesc,
+            todesc=todesc,
+            context=True,
+            numlines=3,
+        )
 
     def generate_html_diff(self, test: IOTestCase):
-        pass
+        stdout_diff = self.html_diff_make_table(
+            fromtext=test.actual_stdout or "",
+            totext=test.expected_stdout or "",
+            fromdesc="Actual stdout",
+            todesc="Expected stdout",
+        )
+        stderr_diff = self.html_diff_make_table(
+            fromtext=test.actual_stderr or "",
+            totext=test.expected_stderr or "",
+            fromdesc="Actual stderr",
+            todesc="Expected stderr",
+        )
+        html = "".join(
+            [
+                "<div>",
+                "<h2>return code</h2>",
+                str(test.runner.returncode),
+                "<hr>",
+                "<h2>stdout</h2>",
+                stdout_diff,
+                "<hr>",
+                "<h2>stderr</h2>",
+                stderr_diff,
+                "</div>",
+            ]
+        )
+        return html
 
     def basic_io_output(self, test: IOTestCase):
         if not test.result.has_run or not test.runner:
@@ -177,15 +219,23 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return sum(i.result.score for i in self.test_cases)
 
     def execute(self):
-        self.results.update(
-            {
-                "score": self.get_total_score(),
-                "tests": [self.format_test(i) for i in self.test_cases],
-            }
-        )
+        logger.info("Formatter running...")
+        self.results = {
+            "output": self.message,
+            "visibility": self.visibility,
+            "stdout_visibility": self.stdout_visibility,
+            "score": self.get_total_score(),
+            "tests": [self.format_test(i) for i in self.test_cases],
+        }
+
         if self.hide_points:
             self.results["score"] = 0
+        logger.info("Formatter execution completed.")
         return self.results
+
+    def export(self, path="/autograder/results/results.json"):
+        with open(path, "w+") as fp:
+            json.dump(self.execute(), fp)
 
 
 if __name__ == "__main__":

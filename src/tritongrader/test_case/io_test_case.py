@@ -73,13 +73,13 @@ class IOTestCase(TestCaseBase):
             return fp.read()
 
     @property
-    def actual_stdout(self):
+    def actual_stdout(self) -> str:
         if not self.runner:
             raise Exception("no runner initialized")
         return self.runner.stdout
 
     @property
-    def actual_stderr(self):
+    def actual_stderr(self) -> str:
         if not self.runner:
             raise Exception("no runner initialized")
         return self.runner.stderr
@@ -195,8 +195,9 @@ class IOTestCaseBulkLoader:
             self.expected_stderr_path, self.expected_stderr_prefix + name
         )
 
+        test_name = name if no_prefix else self.prefix + prefix + name
         test_case = IOTestCase(
-            name=name if no_prefix else self.prefix + prefix + name,
+            name=f"{test_name}",
             point_value=point_value,
             command_path=cmd,
             input_path=stdin,

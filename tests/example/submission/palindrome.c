@@ -6,7 +6,13 @@ void palindrome(const char *str)
 {
     int l = 0;
     int h = strlen(str) - 1;
- 
+
+    // intentional bug to test failure conditions
+    if (h > 8) {
+        printf("Intentionally injected bug!\n");
+        return;
+    }
+
     while (h > l) {
         if (str[l++] != str[h--]) {
             printf("%s is not a palindrome.\n", str);

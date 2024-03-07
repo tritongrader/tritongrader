@@ -113,6 +113,7 @@ class Autograder:
         """
         Add a test case of any kind to the autograder.
         """
+        test_case.name = f"{self.name}: {test_case.name}"
         self.test_cases.append(test_case)
 
     def io_tests_bulk_loader(
