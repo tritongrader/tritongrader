@@ -1,0 +1,14 @@
+#!/bin/sh -e
+repo="<repo>"
+org="<org>"
+ls source > /dev/null
+git --version > /dev/null
+git clone --quiet https://$(cat source/pat)@github.com/"$org"/"$repo".git > /dev/null
+rm source/pat
+rm -rf "$repo"/.git
+
+# install requirements here in case there are updates to the autograder library
+pip3 install --upgrade pip wheel
+pip3 install --force-reinstall -r "$repo"/requirements.txt
+
+python3 "$repo"/grade.py
