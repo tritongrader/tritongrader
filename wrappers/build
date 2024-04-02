@@ -1,0 +1,4 @@
+#!/bin/bash
+# put pat in pat and token in token
+rm -f ./autograder.zip
+zip autograder.zip setup.sh run_autograder first-stage pat token start end

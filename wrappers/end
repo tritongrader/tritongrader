@@ -1,0 +1,20 @@
+#!/usr/bin/env python3
+import requests
+import uuid
+import sys
+from datetime import datetime
+
+with open('uuid', 'r') as file:
+    id = uuid.UUID(file.read())
+with open('source/token', 'r') as file:
+    token = file.read().rstrip()
+with open('error.log', 'r') as file:
+    error = file.read().rstrip()
+headers = {'Authorization': "Bearer " + token}
+start = f"https://duckduckwhale.ucsd.edu/api/v1/<course>/<hw>/run/{id}/end"
+params = {'exit_status': int(sys.argv[1])}
+response = requests.post(start, params=params, headers=headers, data=error)
+if not response.ok:
+    print(f"[{datetime.now()}] Error: failed to send end request to observability backend")
+    print(f"[{datetime.now()}] Code: {response.status_code}")
+    print(f"[{datetime.now()}] Content: {response.content.decode('utf-8')}")
