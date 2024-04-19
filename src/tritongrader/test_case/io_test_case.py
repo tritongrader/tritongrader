@@ -102,10 +102,9 @@ class IOTestCase(TestCaseBase):
             return fp.read()
 
     def check_output(self):
-        if not self.runner:
-            return False
         stdout_check = self.runner.check_stdout(self.exp_stdout_path)
         stderr_check = self.runner.check_stderr(self.exp_stderr_path)
+        print(f"stdout check: {stdout_check}; stderr check: {stderr_check}")
         return stdout_check and stderr_check
 
     def get_execute_command(self):
