@@ -39,6 +39,11 @@ class Autograder:
         missing_files_check: bool = True,
         arm=True,
     ):
+        """
+        Note: `build_command` must be given for compilation to happen; there is not implicit build
+        command.
+        """
+
         self.name = name
 
         self.tests_path = tests_path
@@ -157,16 +162,6 @@ class Autograder:
             binary_io=binary_io,
         )
 
-    def get_default_build_command(self):
-        return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
-
-    def get_build_command(self):
-        return (
-            self.build_command
-            if self.build_command is not None else self.get_default_build_command()
-        )
-
-    def copy2sandbox(self, src_dir, item):
         path = os.path.realpath(os.path.join(src_dir, item))
         dst = os.path.join(self.sandbox.name, item)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
