@@ -126,7 +126,7 @@ class Autograder:
         expected_stdout_path: Optional[str] = None,
         expected_stderr_path: Optional[str] = None,
         commands_prefix: Optional[str] = "cmd-",
-        test_input_prefix: Optional[str] = "test-",
+        test_input_prefix: Optional[str] = "in-",
         expected_stdout_prefix: Optional[str] = "out-",
         expected_stderr_prefix: Optional[str] = "err-",
     ) -> IOTestCaseBulkLoader:
