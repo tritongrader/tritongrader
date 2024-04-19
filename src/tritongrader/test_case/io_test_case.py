@@ -153,7 +153,7 @@ class IOTestCaseBulkLoader:
         expected_stdout_path: Optional[str],
         expected_stderr_path: Optional[str],
         commands_prefix: Optional[str] = "cmd-",
-        test_input_prefix: Optional[str] = "test-",
+        test_input_prefix: Optional[str] = "in-",
         expected_stdout_prefix: Optional[str] = "out-",
         expected_stderr_prefix: Optional[str] = "err-",
         prefix: str = "",
