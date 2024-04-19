@@ -116,7 +116,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         if test.result.error:
             return "\n".join(
                 [
-                    "Unexpected runtime error!",
+                    "== Unexpected autograder runtime error!  Please notify us on Piazza. ==",
                     "== stdout ==",
                     test.actual_stdout,
                     "== stderr ==",
@@ -126,7 +126,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         if test.result.timed_out:
             return "\n".join(
                 [
-                    f"Test case timed out. (limit={test.timeout})",
+                    f"Test case timed out with limit = {test.timeout}.",
                     "== stdout ==",
                     test.actual_stdout,
                     "== stderr ==",
@@ -154,7 +154,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             if not test.result.passed:
                 summary.extend(
                     [
-                        f"Return value: {test.runner.returncode}",
+                        f"== Return value: {test.runner.returncode} ==",
                         "== actual stdout ==",
                         test.actual_stdout,
                         "== actual stderr ==",
