@@ -12,6 +12,7 @@ logger = logging.getLogger("tritongrader.test_case.io_test_case")
 
 
 class IOTestResult(TestResultBase):
+
     def __init__(self):
         super().__init__()
         self.retcode: str = None
@@ -20,6 +21,7 @@ class IOTestResult(TestResultBase):
 
 
 class IOTestCase(TestCaseBase):
+
     def __init__(
         self,
         command_path: str,
@@ -49,10 +51,9 @@ class IOTestCase(TestCaseBase):
         self.runner: CommandRunner = None
 
     def __str__(self):
-        return (
-            f"{self.name} arm={self.arm} cmd_path={self.command_path} cmd={self.command} "
-            + f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
-        )
+        return (f"{self.name} arm={self.arm} cmd_path={self.command_path} cmd={self.command} " +
+            f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
+                )
 
     @property
     def open_mode(self):
@@ -101,10 +102,9 @@ class IOTestCase(TestCaseBase):
             return fp.read()
 
     def check_output(self):
-        if not self.runner:
-            return False
         stdout_check = self.runner.check_stdout(self.exp_stdout_path)
         stderr_check = self.runner.check_stderr(self.exp_stderr_path)
+        print(f"stdout check: {stdout_check}; stderr check: {stderr_check}")
         return stdout_check and stderr_check
 
     def get_execute_command(self):
@@ -145,6 +145,7 @@ class IOTestCase(TestCaseBase):
 
 
 class IOTestCaseBulkLoader:
+
     def __init__(
         self,
         autograder,
@@ -188,12 +189,8 @@ class IOTestCaseBulkLoader:
 
         cmd = os.path.join(self.commands_path, self.commands_prefix + name)
         stdin = os.path.join(self.test_input_path, self.test_input_prefix + name)
-        stdout = os.path.join(
-            self.expected_stdout_path, self.expected_stdout_prefix + name
-        )
-        stderr = os.path.join(
-            self.expected_stderr_path, self.expected_stderr_prefix + name
-        )
+        stdout = os.path.join(self.expected_stdout_path, self.expected_stdout_prefix + name)
+        stderr = os.path.join(self.expected_stderr_path, self.expected_stderr_prefix + name)
 
         test_name = name if no_prefix else self.prefix + prefix + name
         test_case = IOTestCase(
