@@ -39,6 +39,11 @@ class Autograder:
         missing_files_check: bool = True,
         arm=True,
     ):
+        """
+        Note: `build_command` must be given for compilation to happen; there is not implicit build
+        command.
+        """
+
         self.name = name
 
         self.tests_path = tests_path
@@ -58,20 +63,16 @@ class Autograder:
         self.missing_files_check_test_case = None
         if missing_files_check:
             self.missing_files_check_test_case: CustomTestCase = (
-                self.create_missing_files_check_test_case(required_files)
-            )
+                self.create_missing_files_check_test_case(required_files))
             self.add_test(self.missing_files_check_test_case)
 
         self.build_test_case = None
         if build_command:
             self.build_test_case: BasicTestCase = self.create_build_test_case(
-                build_command, compile_points
-            )
+                build_command, compile_points)
             self.add_test(self.build_test_case)
 
-    def create_missing_files_check_test_case(
-        self, required_files: List[str]
-    ) -> CustomTestCase:
+    def create_missing_files_check_test_case(self, required_files: List[str]) -> CustomTestCase:
 
         def check_missing_files(result: CustomTestResult):
             logger.info("Checking missing files...")
@@ -87,9 +88,7 @@ class Autograder:
                 result.output = "\n".join(["Missing files"] + missing_files)
                 result.passed = False
 
-        return CustomTestCase(
-            check_missing_files, name="Missing Files Check", point_value=0
-        )
+        return CustomTestCase(check_missing_files, name="Missing Files Check", point_value=0)
 
     def create_build_test_case(self, build_command, point_value=0) -> BasicTestCase:
         return BasicTestCase(
@@ -143,12 +142,8 @@ class Autograder:
             self,
             commands_path=(commands_path or os.path.join(self.tests_path, "in")),
             test_input_path=(test_input_path or os.path.join(self.tests_path, "in")),
-            expected_stdout_path=(
-                expected_stdout_path or os.path.join(self.tests_path, "exp")
-            ),
-            expected_stderr_path=(
-                expected_stderr_path or os.path.join(self.tests_path, "exp")
-            ),
+            expected_stdout_path=(expected_stdout_path or os.path.join(self.tests_path, "exp")),
+            expected_stderr_path=(expected_stderr_path or os.path.join(self.tests_path, "exp")),
             commands_prefix=commands_prefix,
             test_input_prefix=test_input_prefix,
             expected_stdout_prefix=expected_stdout_prefix,
@@ -156,16 +151,6 @@ class Autograder:
             prefix=prefix,
             default_timeout=default_timeout,
             binary_io=binary_io,
-        )
-
-    def get_default_build_command(self):
-        return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
-
-    def get_build_command(self):
-        return (
-            self.build_command
-            if self.build_command is not None
-            else self.get_default_build_command()
         )
 
     def copy2sandbox(self, src_dir, item):
