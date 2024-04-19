@@ -111,16 +111,14 @@ class CommandRunner:
 
     def run(self):
         if self.capture_output:
-            self.stdout_tf = NamedTemporaryFile(
-                "w+" if self.text else "w+b", delete=False
-            ).name
-            self.stderr_tf = NamedTemporaryFile(
-                "w+" if self.text else "w+b", delete=False
-            ).name
+            self.stdout_tf = NamedTemporaryFile("w+" if self.text else "w+b", delete=False).name
+            self.stderr_tf = NamedTemporaryFile("w+" if self.text else "w+b", delete=False).name
             outfp = open(self.stdout_tf, self.write_mode)
             errfp = open(self.stderr_tf, self.write_mode)
 
         if self.print_command:
+            print(f"Current working directory: {os.getcwd()}")
+            print(f"Files: {[f for f in os.listdir('.')]}")
             print(f"$ {self.command}")
 
         start_ts = time.time()
