@@ -120,6 +120,7 @@ class Autograder:
         test_input_path: Optional[str] = None,
         expected_stdout_path: Optional[str] = None,
         expected_stderr_path: Optional[str] = None,
+        expected_exit_status_path: Optional[str] = None,
         commands_prefix: Optional[str] = "cmd-",
         test_input_prefix: Optional[str] = "in-",
         expected_stdout_prefix: Optional[str] = "out-",
@@ -144,6 +145,8 @@ class Autograder:
             test_input_path=(test_input_path or os.path.join(self.tests_path, "in")),
             expected_stdout_path=(expected_stdout_path or os.path.join(self.tests_path, "exp")),
             expected_stderr_path=(expected_stderr_path or os.path.join(self.tests_path, "exp")),
+            expected_exit_status_path=(expected_exit_status_path
+            or os.path.join(self.tests_path, "exp")),
             commands_prefix=commands_prefix,
             test_input_prefix=test_input_prefix,
             expected_stdout_prefix=expected_stdout_prefix,
