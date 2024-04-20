@@ -37,7 +37,7 @@ class CommandRunner:
         self.stdout_tf: Optional[str] = None
         self.stderr_tf: Optional[str] = None
         self.running_time: float = 0
-        self.returncode = None
+        self.exit_status = None
 
     def __del__(self):
         if self.stdout_tf:
@@ -138,4 +138,4 @@ class CommandRunner:
         )
         end_ts = time.time()
         self.running_time = end_ts - start_ts
-        self.returncode = sp.returncode
+        self.exit_status: int = sp.returncode

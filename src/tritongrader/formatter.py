@@ -84,20 +84,20 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         stdout_diff = self.html_diff_make_table(
             fromtext=test.actual_stdout or "",
             totext=test.expected_stdout or "",
-            fromdesc="Actual stdout",
+            fromdesc="Your stdout",
             todesc="Expected stdout",
         )
         stderr_diff = self.html_diff_make_table(
             fromtext=test.actual_stderr or "",
             totext=test.expected_stderr or "",
-            fromdesc="Actual stderr",
+            fromdesc="Your stderr",
             todesc="Expected stderr",
         )
         html = "".join(
             [
                 "<div>",
-                "<h2>return code</h2>",
-                str(test.runner.returncode),
+                "<h2>exit status</h2>",
+                str(test.runner.exit_status),
                 "<hr>",
                 "<h2>stdout</h2>",
                 stdout_diff,
@@ -116,11 +116,13 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         if test.result.error:
             return "\n".join(
                 [
-                    "== Unexpected autograder runtime error!  Please notify us on Piazza. ==",
-                    "== stdout ==",
+                    "=== Unexpected autograder runtime error!  Please notify us on Piazza. ===",
+                    "=== stdout ===",
                     test.actual_stdout,
-                    "== stderr ==",
+                    "=== stderr ===",
                     test.actual_stderr,
+                    "=== exit status ===",
+                    str(test.exit_status),
                 ]
             )
         if test.result.timed_out:
@@ -131,6 +133,8 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     test.actual_stdout,
                     "== stderr ==",
                     test.actual_stderr,
+                    "=== exit status ===",
+                    str(test.exit_status),
                 ]
             )
 
@@ -139,26 +143,29 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         summary.append(f"{status_str} in {test.runner.running_time:.2f} ms.")
 
         if self.verbose:
-            summary.extend(["== test command ==", test.command])
+            summary.extend(["=== test command ===", test.command])
 
             if test.test_input is not None:
-                summary.extend(["== test input ==", test.test_input])
+                summary.extend(["=== test input ===", test.test_input])
             summary.extend(
                 [
-                    "== expected stdout ==",
+                    "=== expected stdout ===",
                     test.expected_stdout,
-                    "== expected stderr ==",
+                    "=== expected stderr ===",
                     test.expected_stderr,
+                    "=== expected exit status ===",
+                    str(test.runner.exit_status),
                 ]
             )
             if not test.result.passed:
                 summary.extend(
                     [
-                        f"== Return value: {test.runner.returncode} ==",
-                        "== actual stdout ==",
+                        "=== your stdout ===",
                         test.actual_stdout,
-                        "== actual stderr ==",
+                        "=== your stderr ===",
                         test.actual_stderr,
+                        "=== your exit status ===",
+                        str(test.exit_status),
                     ]
                 )
 
@@ -183,18 +190,18 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         summary = []
         summary.extend(
             [
-                "== test command ==",
+                "=== test command ===",
                 test.command,
-                "== return code ==",
-                str(test.runner.returncode),
+                "=== exit status ===",
+                str(test.runner.exit_status),
             ]
         )
         if self.verbose:
             summary.extend(
                 [
-                    "== stdout ==",
+                    "=== stdout ===",
                     test.runner.stdout,
-                    "== stderr ==",
+                    "=== stderr ===",
                     test.runner.stderr,
                 ]
             )
