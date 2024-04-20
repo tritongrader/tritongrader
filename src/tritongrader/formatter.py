@@ -154,7 +154,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     "=== expected stderr ===",
                     test.expected_stderr,
                     "=== expected exit status ===",
-                    str(test.runner.exit_status),
+                    str(test.exp_exit_status),
                 ]
             )
             if not test.result.passed:
