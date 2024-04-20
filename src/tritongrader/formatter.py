@@ -120,8 +120,6 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                 test.actual_stdout,
                 "=== stderr ===",
                 test.actual_stderr,
-                "=== exit status ===",
-                str(test.exit_status),
             ])
         if test.result.timed_out:
             return "\n".join([
@@ -130,8 +128,6 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                 test.actual_stdout,
                 "== stderr ==",
                 test.actual_stderr,
-                "=== exit status ===",
-                str(test.exit_status),
             ])
 
         status_str = "PASSED" if test.result.passed else "FAILED"
