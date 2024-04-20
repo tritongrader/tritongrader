@@ -133,8 +133,9 @@ class IOTestCase(TestCaseBase):
             stderr_check = self.runner.check_stderr(self.exp_stderr_path)
             status = True
             if self.exp_exit_status is not None:
-                status = self.exp_exit_status == self.runner.returncode
+                status = self.exp_exit_status == self.runner.exit_status
             self.result.passed = stdout_check and stderr_check and status
+            self.exit_status: int = self.runner.exit_status
             print(f"stdout check: {stdout_check}; stderr check: {stderr_check}; status: {status}")
 
             self.result.score = self.point_value if self.result.passed else 0

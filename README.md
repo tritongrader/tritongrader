@@ -55,16 +55,16 @@ ag = Autograder(
 
 The library currently supports three types of test cases:
 - I/O-based tests (`IOTestCase`),
-- Basic return code-based tests (`BasicTestCase`), and
+- Basic exit status-based tests (`BasicTestCase`), and
 - Custom tests (`CustomTestCase`).
 
 #### Basic Test Cases
-`BasicTestCase` runs a command in the terminal and evaluates the return code
+`BasicTestCase` runs a command in the terminal and evaluates the exit status
 to determine if the test passes. The output of the command are stored for
 information only.
 
-The expected return code can be configured during test initialization, in
-case a failure return code is expected.
+The expected exit status can be configured during test initialization, in
+case a failure exit status is expected.
 
 #### I/O-based tests
 

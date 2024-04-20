@@ -9,6 +9,7 @@ logger = logging.getLogger("tritongrader.test_case.basic_test_case")
 
 
 class BasicTestResult(TestResultBase):
+
     def __init__(self):
         super().__init__()
         self.retcode: int = None
@@ -53,7 +54,7 @@ class BasicTestCase(TestCaseBase):
             arm=self.arm,
         )
         self.runner.run()
-        self.result.passed = self.runner.returncode == self.expected_retcode
+        self.result.passed = self.runner.exit_status == self.expected_retcode
         self.result.score = self.point_value if self.result.passed else 0
 
     def execute(self):
