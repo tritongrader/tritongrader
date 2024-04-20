@@ -121,8 +121,6 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     test.actual_stdout,
                     "=== stderr ===",
                     test.actual_stderr,
-                    "=== exit status ===",
-                    str(test.exit_status),
                 ]
             )
         if test.result.timed_out:
@@ -133,8 +131,6 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     test.actual_stdout,
                     "== stderr ==",
                     test.actual_stderr,
-                    "=== exit status ===",
-                    str(test.exit_status),
                 ]
             )
 
