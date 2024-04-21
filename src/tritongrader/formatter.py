@@ -148,12 +148,12 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     "== expected stdout ==",
                     test.expected_stdout,
                     "== expected stderr ==",
+                    test.expected_stderr,
                 ]
             )
             if not test.result.passed:
                 summary.extend(
                     [
-                        test.expected_stderr,
                         f"Return value: {test.runner.returncode}",
                         "== actual stdout ==",
                         test.actual_stdout,
