@@ -200,8 +200,13 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         return {"output": "\n".join(summary)}
 
     def format_custom_test(self, test: CustomTestCase):
+        if not test.result.has_run:
+            output = "This test was not run."
+        else:
+            output = test.result.output
+
         return {
-            "output": test.result.output,
+            "output": output
         }
 
     def format_test(self, test: TestCaseBase):
