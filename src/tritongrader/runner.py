@@ -55,16 +55,19 @@ class CommandRunner:
             print(line, end="")
 
     def compare_text_files(self, fp1: TextIO, fp2: TextIO) -> bool:
-        while True:
-            line1 = fp1.readline()
-            line2 = fp2.readline()
-            if line1 != line2:
-                return False
-            if not line1 or not line2:
-                break
-        fp1.seek(0)
-        fp2.seek(0)
-        return True
+        try:
+            while True:
+                line1 = fp1.readline()
+                line2 = fp2.readline()
+                if line1 != line2:
+                    return False
+                if not line1 or not line2:
+                    break
+            fp1.seek(0)
+            fp2.seek(0)
+            return True
+        except UnicodeDecodeError:
+            return False
 
     def compare_binary_files(self, fp1: BinaryIO, fp2: BinaryIO) -> bool:
         return NotImplementedError
