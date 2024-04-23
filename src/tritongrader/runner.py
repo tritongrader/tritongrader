@@ -102,8 +102,8 @@ class CommandRunner:
         with open(self.stdout_tf, self.read_mode) as fp:
             try:
                 return fp.read()
-            except UnicodeDecodeError:
-                return "tritongrader: Error reading stdout: Non UTF-8 characters detected."
+            except UnicodeDecodeError as e:
+                return f"tritongrader: error decoding stdout as UTF-8: {e}"
 
     @property
     def stderr(self):
@@ -112,13 +112,17 @@ class CommandRunner:
         with open(self.stderr_tf, self.read_mode) as fp:
             try:
                 return fp.read()
-            except UnicodeDecodeError:
-                return "tritongrader: Error reading stderr: Non UTF-8 characters detected."
+            except UnicodeDecodeError as e:
+                return f"tritongrader: error decoding stderr as UTF-8: {e}"
 
     def run(self):
         if self.capture_output:
-            self.stdout_tf = NamedTemporaryFile("w+" if self.text else "w+b", delete=False).name
-            self.stderr_tf = NamedTemporaryFile("w+" if self.text else "w+b", delete=False).name
+            self.stdout_tf = NamedTemporaryFile(
+                "w+" if self.text else "w+b", delete=False
+            ).name
+            self.stderr_tf = NamedTemporaryFile(
+                "w+" if self.text else "w+b", delete=False
+            ).name
             outfp = open(self.stdout_tf, self.write_mode)
             errfp = open(self.stderr_tf, self.write_mode)
 
