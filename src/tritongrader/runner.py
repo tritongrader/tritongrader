@@ -99,15 +99,21 @@ class CommandRunner:
     def stdout(self):
         if not self.capture_output:
             raise Exception("stdout was not captured")
-        with open(self.stdout_tf, self.read_mode) as fp:
-            return fp.read()
+        try:
+            with open(self.stdout_tf, self.read_mode) as fp:
+                return fp.read()
+        except UnicodeDecodeError as e:
+            return str(e)
 
     @property
     def stderr(self):
         if not self.capture_output:
             raise Exception("stderr was not captured")
-        with open(self.stderr_tf, self.read_mode) as fp:
-            return fp.read()
+        try:
+            with open(self.stderr_tf, self.read_mode) as fp:
+                return fp.read()
+        except UnicodeDecodeError as e:
+            return str(e)
 
     def run(self):
         if self.capture_output:
