@@ -100,14 +100,20 @@ class CommandRunner:
         if not self.capture_output:
             raise Exception("stdout was not captured")
         with open(self.stdout_tf, self.read_mode) as fp:
-            return fp.read()
+            try:
+                return fp.read()
+            except UnicodeDecodeError:
+                return "tritongrader: Error reading stdout: Non UTF-8 characters detected."
 
     @property
     def stderr(self):
         if not self.capture_output:
             raise Exception("stderr was not captured")
         with open(self.stderr_tf, self.read_mode) as fp:
-            return fp.read()
+            try:
+                return fp.read()
+            except UnicodeDecodeError:
+                return "tritongrader: Error reading stderr: Non UTF-8 characters detected."
 
     def run(self):
         if self.capture_output:
