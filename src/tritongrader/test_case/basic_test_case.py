@@ -21,7 +21,6 @@ class BasicTestCase(TestCaseBase):
     A basic test case executes a command and evaluates pass/fail
     based on the return value (retcode).
     """
-
     def __init__(
         self,
         command: str,

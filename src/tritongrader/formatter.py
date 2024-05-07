@@ -166,12 +166,13 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
 
     def format_io_test(self, test: IOTestCase):
         return {
-            "output_format": "html" if self.html_diff else "simple_format",
-            "output": (
-                self.generate_html_diff(test)
-                if self.html_diff
-                else self.basic_io_output(test)
-            ),
+            "output_format":
+                "html" if self.html_diff else "simple_format",
+            "output":
+                (
+                    self.generate_html_diff(test)
+                    if self.html_diff else self.basic_io_output(test)
+                ),
         }
 
     def format_basic_test(self, test: BasicTestCase):
@@ -197,7 +198,9 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                     test.runner.stderr,
                 ]
             )
-        return {"output": "\n".join(summary)}
+        return {
+            "output": "\n".join(summary)
+        }
 
     def format_custom_test(self, test: CustomTestCase):
         if not test.result.has_run:

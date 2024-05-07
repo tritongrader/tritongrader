@@ -72,7 +72,6 @@ class Autograder:
     def create_missing_files_check_test_case(
         self, required_files: List[str]
     ) -> CustomTestCase:
-
         def check_missing_files(result: CustomTestResult):
             logger.info("Checking missing files...")
             missing_files = []
@@ -164,8 +163,7 @@ class Autograder:
     def get_build_command(self):
         return (
             self.build_command
-            if self.build_command is not None
-            else self.get_default_build_command()
+            if self.build_command is not None else self.get_default_build_command()
         )
 
     def copy2sandbox(self, src_dir, item):
