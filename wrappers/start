@@ -21,6 +21,8 @@ headers = {
 }
 response = requests.post(start, headers=headers, data=metadata)
 if not response.ok:
-    print(f"[{datetime.now()}] Error: failed to send start request to observability backend")
+    print(
+        f"[{datetime.now()}] Error: failed to send start request to observability backend"
+    )
     print(f"[{datetime.now()}] Code: {response.status_code}")
     print(f"[{datetime.now()}] Content: {response.content.decode('utf-8')}")

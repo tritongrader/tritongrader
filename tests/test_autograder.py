@@ -13,7 +13,6 @@ sys.path.append(
 # the library evolves.
 #
 
-
 from tritongrader.autograder import Autograder  # noqa
 from tritongrader.formatter import GradescopeResultsFormatter  # noqa
 from tritongrader.test_case import ( # noqa

@@ -1,4 +1,5 @@
 [style]
-based_on_style = pep8
-COLUMN_LIMIT = 100
-CONTINUATION_ALIGN_STYLE = FIXED
+based_on_style = facebook
+COLUMN_LIMIT = 88
+FORCE_MULTILINE_DICT = True
+EACH_DICT_ENTRY_ON_SEPARATE_LINE = True

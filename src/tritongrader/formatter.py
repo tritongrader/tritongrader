@@ -13,7 +13,6 @@ logger = logging.getLogger("tritongrader.formatter")
 
 
 class ResultsFormatterBase:
-
     def __init__(self, src: Union[Autograder, Iterable[Autograder]]):
         self.formatters: Dict[TestCaseBase, Callable[[TestCaseBase], None]] = {
             IOTestCase: self.format_io_test,
@@ -42,7 +41,6 @@ class ResultsFormatterBase:
 
 
 class GradescopeResultsFormatter(ResultsFormatterBase):
-
     def __init__(
         self,
         src: Union[Autograder, Iterable[Autograder]],
@@ -95,18 +93,20 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             fromdesc="Your stderr",
             todesc="Expected stderr",
         )
-        html = "".join([
-            "<div>",
-            "<h2>exit status</h2>",
-            str(test.runner.exit_status),
-            "<hr>",
-            "<h2>stdout</h2>",
-            stdout_diff,
-            "<hr>",
-            "<h2>stderr</h2>",
-            stderr_diff,
-            "</div>",
-        ])
+        html = "".join(
+            [
+                "<div>",
+                "<h2>exit status</h2>",
+                str(test.runner.exit_status),
+                "<hr>",
+                "<h2>stdout</h2>",
+                stdout_diff,
+                "<hr>",
+                "<h2>stderr</h2>",
+                stderr_diff,
+                "</div>",
+            ]
+        )
         return html
 
     def basic_io_output(self, test: IOTestCase):
@@ -114,21 +114,25 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             return "This test was not run."
 
         if test.result.error:
-            return "\n".join([
-                "=== Unexpected autograder runtime error!  Please notify us on Piazza. ===",
-                "=== stdout ===",
-                test.actual_stdout,
-                "=== stderr ===",
-                test.actual_stderr,
-            ])
+            return "\n".join(
+                [
+                    "=== Unexpected autograder runtime error!  Please notify us on Piazza. ===",
+                    "=== stdout ===",
+                    test.actual_stdout,
+                    "=== stderr ===",
+                    test.actual_stderr,
+                ]
+            )
         if test.result.timed_out:
-            return "\n".join([
-                f"Test case timed out with limit = {test.timeout}.",
-                "== stdout ==",
-                test.actual_stdout,
-                "== stderr ==",
-                test.actual_stderr,
-            ])
+            return "\n".join(
+                [
+                    f"Test case timed out with limit = {test.timeout}.",
+                    "== stdout ==",
+                    test.actual_stdout,
+                    "== stderr ==",
+                    test.actual_stderr,
+                ]
+            )
 
         status_str = "PASSED" if test.result.passed else "FAILED"
         summary = []
@@ -139,51 +143,67 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
 
             if test.test_input is not None:
                 summary.extend(["=== test input ===", test.test_input])
-            summary.extend([
-                "=== expected stdout ===",
-                test.expected_stdout,
-                "=== expected stderr ===",
-                test.expected_stderr,
-                "=== expected exit status ===",
-                str(test.exp_exit_status),
-            ])
+            summary.extend(
+                [
+                    "=== expected stdout ===",
+                    test.expected_stdout,
+                    "=== expected stderr ===",
+                    test.expected_stderr,
+                    "=== expected exit status ===",
+                    str(test.exp_exit_status),
+                ]
+            )
             if not test.result.passed:
-                summary.extend([
-                    "=== your stdout ===",
-                    test.actual_stdout,
-                    "=== your stderr ===",
-                    test.actual_stderr,
-                    "=== your exit status ===",
-                    str(test.exit_status),
-                ])
+                summary.extend(
+                    [
+                        "=== your stdout ===",
+                        test.actual_stdout,
+                        "=== your stderr ===",
+                        test.actual_stderr,
+                        "=== your exit status ===",
+                        str(test.exit_status),
+                    ]
+                )
 
         return "\n".join(summary)
 
     def format_io_test(self, test: IOTestCase):
         return {
-            "output_format": "html" if self.html_diff else "simple_format",
+            "output_format":
+                "html" if self.html_diff else "simple_format",
             "output":
-            (self.generate_html_diff(test) if self.html_diff else self.basic_io_output(test)),
+                (
+                    self.generate_html_diff(test)
+                    if self.html_diff else self.basic_io_output(test)
+                ),
         }
 
     def format_basic_test(self, test: BasicTestCase):
         if not test.runner:
-            return {"output": "This test was not run."}
+            return {
+                "output": "This test was not run."
+            }
         summary = []
-        summary.extend([
-            "=== test command ===",
-            test.command,
-            "=== exit status ===",
-            str(test.runner.exit_status),
-        ])
+        summary.extend(
+            [
+                "=== test command ===",
+                test.command,
+                "=== exit status ===",
+                str(test.runner.exit_status),
+            ]
+        )
         if self.verbose:
-            summary.extend([
-                "=== stdout ===",
-                test.runner.stdout,
-                "=== stderr ===",
-                test.runner.stderr,
-            ])
-        return {"output": "\n".join(summary)}
+            summary.extend(
+                [
+                    "=== stdout ===",
+                    test.runner.stdout,
+                    "=== stderr ===",
+                    test.runner.stderr,
+                ]
+            )
+        return {
+            "output": "\n".join(summary)
+        }
 
     def format_custom_test(self, test: CustomTestCase):
         return {

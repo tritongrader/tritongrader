@@ -12,7 +12,6 @@ logger = logging.getLogger("tritongrader.test_case.io_test_case")
 
 
 class IOTestResult(TestResultBase):
-
     def __init__(self):
         super().__init__()
         self.exit_status: Optional[int] = None
@@ -21,7 +20,6 @@ class IOTestResult(TestResultBase):
 
 
 class IOTestCase(TestCaseBase):
-
     def __init__(
         self,
         command_path: str,
@@ -53,9 +51,11 @@ class IOTestCase(TestCaseBase):
         self.runner: CommandRunner = None
 
     def __str__(self):
-        return (f"{self.name} arm={self.arm} cmd_path={self.command_path} cmd={self.command} " +
+        return (
+            f"{self.name} arm={self.arm} cmd_path={self.command_path} cmd={self.command} "
+            +
             f"input_path={self.input_path} exp_stdout_path={self.exp_stdout_path} exp_stderr_path={self.exp_stderr_path}"
-                )
+        )
 
     @property
     def open_mode(self):
@@ -136,7 +136,9 @@ class IOTestCase(TestCaseBase):
                 status = self.exp_exit_status == self.runner.exit_status
             self.result.passed = stdout_check and stderr_check and status
             self.exit_status: int = self.runner.exit_status
-            print(f"stdout check: {stdout_check}; stderr check: {stderr_check}; status: {status}")
+            print(
+                f"stdout check: {stdout_check}; stderr check: {stderr_check}; status: {status}"
+            )
 
             self.result.score = self.point_value if self.result.passed else 0
         except subprocess.TimeoutExpired:
@@ -149,7 +151,6 @@ class IOTestCase(TestCaseBase):
 
 
 class IOTestCaseBulkLoader:
-
     def __init__(
         self,
         autograder,
@@ -197,11 +198,16 @@ class IOTestCaseBulkLoader:
 
         cmd = os.path.join(self.commands_path, self.commands_prefix + name)
         stdin = os.path.join(self.test_input_path, self.test_input_prefix + name)
-        stdout = os.path.join(self.expected_stdout_path, self.expected_stdout_prefix + name)
-        stderr = os.path.join(self.expected_stderr_path, self.expected_stderr_prefix + name)
+        stdout = os.path.join(
+            self.expected_stdout_path, self.expected_stdout_prefix + name
+        )
+        stderr = os.path.join(
+            self.expected_stderr_path, self.expected_stderr_prefix + name
+        )
         if self.expected_exit_status_path is not None and self.expected_exit_status_prefix is not None:
-            file = os.path.join(self.expected_exit_status_path,
-                self.expected_exit_status_prefix + name)
+            file = os.path.join(
+                self.expected_exit_status_path, self.expected_exit_status_prefix + name
+            )
             with open(file, "r") as fin:
                 exit_status = int(fin.read().strip())
         else:
