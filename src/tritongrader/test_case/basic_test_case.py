@@ -9,7 +9,6 @@ logger = logging.getLogger("tritongrader.test_case.basic_test_case")
 
 
 class BasicTestResult(TestResultBase):
-
     def __init__(self):
         super().__init__()
         self.retcode: int = None
