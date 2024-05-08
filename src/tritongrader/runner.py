@@ -104,7 +104,21 @@ class CommandRunner:
             raise Exception("stdout was not captured")
         with open(self.stdout_tf, self.read_mode) as fp:
             try:
-                return fp.read()
+                if os.path.getsize(
+                    self.stdout_tf
+                ) > 20000000:  #hard coded big number, maybe parametrize this
+                    msg = "stdout is too large to read, you may have an infinite loop in your code. " \
+                           "Here are the first 4096 bytes of stdout:\n"
+                    pos = 0
+                    while (pos < 4096):
+                        msg += fp.readline(4096 - pos)
+                        pos = fp.tell()
+                    fp.close()
+                    return msg
+                else:
+                    msg = fp.read()
+                    fp.close()
+                    return msg
             except UnicodeDecodeError as e:
                 return f"tritongrader: error decoding stdout as UTF-8: {e}"
 
@@ -114,7 +128,21 @@ class CommandRunner:
             raise Exception("stderr was not captured")
         with open(self.stderr_tf, self.read_mode) as fp:
             try:
-                return fp.read()
+                if os.path.getsize(
+                    self.stderr_tf
+                ) > 20000000:  #hard coded big number, maybe parametrize this
+                    msg = "stderr is too large to read, you may have an infinite loop in your code. " \
+                           "Here are the first 4096 bytes of stderr:\n"
+                    pos = 0
+                    while (pos < 4096):
+                        msg += fp.readline(4096 - pos)
+                        pos = fp.tell()
+                    fp.close()
+                    return msg
+                else:
+                    msg = fp.read()
+                    fp.close()
+                    return msg
             except UnicodeDecodeError as e:
                 return f"tritongrader: error decoding stderr as UTF-8: {e}"
 
