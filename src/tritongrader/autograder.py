@@ -166,6 +166,7 @@ class Autograder:
             binary_io=binary_io,
         )
 
+    def copy2sandbox(self, src_dir, item):
         path = os.path.realpath(os.path.join(src_dir, item))
         dst = os.path.join(self.sandbox.name, item)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
