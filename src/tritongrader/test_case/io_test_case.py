@@ -129,18 +129,21 @@ class IOTestCase(TestCaseBase):
                 arm=self.arm,
             )
             self.runner.run()
+
             stdout_check = self.runner.check_stdout(self.exp_stdout_path)
             stderr_check = self.runner.check_stderr(self.exp_stderr_path)
             status = True
             if self.exp_exit_status is not None:
                 status = self.exp_exit_status == self.runner.exit_status
-            self.result.passed = stdout_check and stderr_check and status
+            # TODO self.result.exit_status
             self.exit_status: int = self.runner.exit_status
+            self.result.passed = stdout_check and stderr_check and status
+            self.result.score = self.point_value if self.result.passed else 0
+
+            # TODO report to students
             print(
                 f"stdout check: {stdout_check}; stderr check: {stderr_check}; status: {status}"
             )
-
-            self.result.score = self.point_value if self.result.passed else 0
         except subprocess.TimeoutExpired:
             logger.info(f"{self.name} timed out (limit={self.timeout}s)!")
             self.result.timed_out = True

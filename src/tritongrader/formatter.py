@@ -114,9 +114,10 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             return "This test was not run."
 
         if test.result.error:
+            # TODO report to Observer
             return "\n".join(
                 [
-                    "=== Unexpected autograder runtime error!  Please notify us on Piazza. ===",
+                    "=== Unexpected autograder runtime error!  Please notify your instructors. ===",
                     "=== stdout ===",
                     test.actual_stdout,
                     "=== stderr ===",
