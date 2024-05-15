@@ -157,9 +157,6 @@ class Autograder:
             expected_exit_status_path=(
                 expected_exit_status_path or os.path.join(self.tests_path, "exp")
             ),
-            expected_exit_status_path=(
-                expected_exit_status_path or os.path.join(self.tests_path, "exp")
-            ),
             commands_prefix=commands_prefix,
             test_input_prefix=test_input_prefix,
             expected_stdout_prefix=expected_stdout_prefix,
