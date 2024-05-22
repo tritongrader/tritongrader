@@ -9,7 +9,7 @@ class TestResultBase:
 
 
 class TestCaseBase:
-    DEFAULT_TIMEOUT = 1
+    DEFAULT_TIMEOUT = 10
 
     def __init__(
         self,
