@@ -23,6 +23,9 @@ class CommandRunner:
         text: bool = True,
         arm: bool = False,
     ):
+        """
+        - timeout: timeout in seconds.
+        """
         if arm:
             self.command = CommandRunner.QEMU_ARM + command
         else:

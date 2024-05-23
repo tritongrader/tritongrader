@@ -34,6 +34,9 @@ class IOTestCase(TestCaseBase):
         binary_io: bool = False,
         hidden: bool = False,
     ):
+        """
+        - timeout: timeout in seconds.
+        """
         super().__init__(name, point_value, timeout, hidden)
 
         self.arm: bool = arm
@@ -171,6 +174,9 @@ class IOTestCaseBulkLoader:
         default_timeout: float = 500,
         binary_io: bool = False,
     ):
+        """
+        - default_timeout: timeout in seconds.
+        """
         self.autograder = autograder
         self.commands_path = commands_path
         self.test_input_path = test_input_path
@@ -196,6 +202,9 @@ class IOTestCaseBulkLoader:
         prefix: str = "",
         no_prefix: bool = False,
     ) -> "IOTestCaseBulkLoader":
+        """
+        - timeout: timeout in seconds.
+        """
         if timeout is None:
             timeout = self.default_timeout
 
