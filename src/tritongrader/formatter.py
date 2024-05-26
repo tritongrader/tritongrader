@@ -1,5 +1,6 @@
 import json
 import logging
+import binascii
 from typing import Dict, Callable, List, Union, Iterable
 from difflib import HtmlDiff
 from tritongrader import Autograder
@@ -109,29 +110,41 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
         )
         return html
 
+    @staticmethod
+    def bin2text(binary: bytes):
+        """Attempt to convert binary I/O products to Unicode. Fallback to hexdumps."""
+        try:
+            return binary.decode()
+        except:
+            return binascii.hexlify(binary, " ", -2).decode()
+
     def basic_io_output(self, test: IOTestCase):
         if not test.result.has_run or not test.runner:
             return "This test was not run."
 
         if test.result.error:
             # TODO report to Observer
+            test_stdout = self.bin2text(test.actual_stdout) if test.binary_io else test.actual_stdout
+            test_stderr = self.bin2text(test.actual_stderr) if test.binary_io else test.actual_stderr
             return "\n".join(
                 [
                     "=== Unexpected autograder runtime error!  Please notify your instructors. ===",
                     "=== stdout ===",
-                    test.actual_stdout,
+                    test_stdout,
                     "=== stderr ===",
-                    test.actual_stderr,
+                    test_stderr,
                 ]
             )
         if test.result.timed_out:
+            test_stdout = self.bin2text(test.actual_stdout) if test.binary_io else test.actual_stdout
+            test_stderr = self.bin2text(test.actual_stderr) if test.binary_io else test.actual_stderr
             return "\n".join(
                 [
                     f"Test case timed out with limit = {test.timeout}.",
                     "== stdout ==",
-                    test.actual_stdout,
+                    test_stdout
                     "== stderr ==",
-                    test.actual_stderr,
+                    test_stderr,
                 ]
             )
 
@@ -143,24 +156,29 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
             summary.extend(["=== test command ===", test.command])
 
             if test.test_input is not None:
-                summary.extend(["=== test input ===", test.test_input])
-            summary.extend(
+                exp_stdout = self.bin2text(test.expected_stdout) if test.binary_io else test.expected_stdout
+                exp_stderr = self.bin2text(test.expected_stderr) if test.binary_io else test.expected_stderr
+                test_input = self.bin2text(test.test_input) if test.binary_io else test.test_input
+                summary.extend(["=== test input ===", test_input])
+                summary.extend(
                 [
                     "=== expected stdout ===",
-                    test.expected_stdout,
+                    exp_stdout,
                     "=== expected stderr ===",
-                    test.expected_stderr,
+                    exp_stderr,
                     "=== expected exit status ===",
                     str(test.exp_exit_status),
                 ]
             )
             if not test.result.passed:
+                test_stdout = self.bin2text(test.actual_stdout) if test.binary_io else test.actual_stdout
+                test_stderr = self.bin2text(test.actual_stderr) if test.binary_io else test.actual_stderr
                 summary.extend(
                     [
                         "=== your stdout ===",
-                        test.actual_stdout,
+                        test_stdout,
                         "=== your stderr ===",
-                        test.actual_stderr,
+                        test_stderr,
                         "=== your exit status ===",
                         str(test.exit_status),
                     ]
