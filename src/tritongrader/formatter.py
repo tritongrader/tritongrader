@@ -142,7 +142,7 @@ class GradescopeResultsFormatter(ResultsFormatterBase):
                 [
                     f"Test case timed out with limit = {test.timeout}.",
                     "== stdout ==",
-                    test_stdout
+                    test_stdout,
                     "== stderr ==",
                     test_stderr,
                 ]
