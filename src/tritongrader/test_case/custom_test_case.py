@@ -44,7 +44,3 @@ class CustomTestCase(TestCaseBase):
             logger.info(f"{self.name} timed out (limit={self.timeout}s)!")
             self.result.timed_out = True
             self.result.passed = False
-        except Exception as e:
-            logger.warn(f"{self.name} raised unexpected exception!\n{str(e)}")
-            traceback.print_exc()
-            self.result.error = True

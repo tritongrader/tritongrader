@@ -150,10 +150,6 @@ class IOTestCase(TestCaseBase):
         except subprocess.TimeoutExpired:
             logger.info(f"{self.name} timed out (limit={self.timeout}s)!")
             self.result.timed_out = True
-        except Exception as e:
-            logger.info(f"{self.name} raised unexpected exception!\n{str(e)}")
-            traceback.print_exc()
-            self.result.error = True
 
 
 class IOTestCaseBulkLoader:
