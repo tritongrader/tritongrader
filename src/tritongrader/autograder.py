@@ -102,6 +102,7 @@ class Autograder:
             point_value=point_value,
             expected_retcode=0,
             arm=False,
+            timeout=3,
         )
 
     def create_sandbox_directory(self) -> str:
