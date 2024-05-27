@@ -66,8 +66,25 @@ class CommandRunner:
         return "w" if self.text else "wb"
 
     def compare(self, file_a: str, file_b: str) -> bool:
+        file_a_size = os.path.getsize(file_a)
+        file_b_size = os.path.getsize(file_b)
+        if file_a_size != file_b_size:
+            return False # skip checking contents if lengths differ
         with open(file_a, "rb") as a, open(file_b, "rb") as b:
-            return a.read() == b.read()
+            if file_a_size <= 20000000:
+                # safe to check directly (hard coded upper bound)
+                return a.read() == b.read()
+            # else do chunked reads
+            BLOCK_SIZE = 8192
+            a_block = a.read(BLOCK_SIZE)
+            b_block = b.read(BLOCK_SIZE)
+            while a_block:
+                # can loop only on a_block b/c lengths are equal here
+                if a_block != b_block:
+                    return False
+                a_block = a.read(BLOCK_SIZE)
+                b_block = b.read(BLOCK_SIZE)
+        return True
 
     def check_stdout(self, expected_stdout: str) -> bool:
         assert self.stdout_tf is not None
