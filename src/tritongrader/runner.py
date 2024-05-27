@@ -57,24 +57,6 @@ class CommandRunner:
                 break
             print(line, end="")
 
-    def compare_text_files(self, fp1: TextIO, fp2: TextIO) -> bool:
-        try:
-            while True:
-                line1 = fp1.readline()
-                line2 = fp2.readline()
-                if line1 != line2:
-                    return False
-                if not line1 or not line2:
-                    break
-            fp1.seek(0)
-            fp2.seek(0)
-            return True
-        except UnicodeDecodeError:
-            return False
-
-    def compare_binary_files(self, fp1: BinaryIO, fp2: BinaryIO) -> bool:
-        return NotImplementedError
-
     @property
     def read_mode(self):
         return "r" if self.text else "rb"
@@ -83,23 +65,17 @@ class CommandRunner:
     def write_mode(self):
         return "w" if self.text else "wb"
 
+    def compare(self, file_a: str, file_b: str) -> bool:
+        with open(file_a, "rb") as a, open(file_b, "rb") as b:
+            return a.read() == b.read()
+
     def check_stdout(self, expected_stdout: str) -> bool:
-        fp1 = open(self.stdout_tf, self.read_mode)
-        fp2 = open(expected_stdout, self.read_mode)
-        with fp1, fp2:
-            if self.text:
-                return self.compare_text_files(fp1, fp2)
-            else:
-                return self.compare_binary_files(fp1, fp2)
+        assert self.stdout_tf is not None
+        return self.compare(self.stdout_tf, expected_stdout)
 
     def check_stderr(self, expected_stderr: str) -> bool:
-        fp1 = open(self.stderr_tf, self.read_mode)
-        fp2 = open(expected_stderr, self.read_mode)
-        with fp1, fp2:
-            if self.text:
-                return self.compare_text_files(fp1, fp2)
-            else:
-                return self.compare_binary_files(fp1, fp2)
+        assert self.stderr_tf is not None
+        return self.compare(self.stderr_tf, expected_stderr)
 
     @property
     def stdout(self):
