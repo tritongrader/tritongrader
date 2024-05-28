@@ -2,6 +2,7 @@ import os
 import subprocess
 import time
 import logging
+import binascii
 
 from tempfile import NamedTemporaryFile
 from typing import TextIO, Optional, BinaryIO
@@ -94,6 +95,14 @@ class CommandRunner:
         assert self.stderr_tf is not None
         return self.compare(self.stderr_tf, expected_stderr)
 
+    @staticmethod
+    def bin2text(binary: bytes):
+        """Attempt to convert binary I/O products to Unicode. Fallback to hexdumps."""
+        try:
+            return binary.decode()
+        except:
+            return binascii.hexlify(binary, " ", -2).decode()
+
     @property
     def stdout(self):
         if not self.capture_output:
@@ -103,14 +112,20 @@ class CommandRunner:
                 if os.path.getsize(
                     self.stdout_tf
                 ) > 20000000:  #hard coded big number, maybe parametrize this
-                    msg = "stdout is too large to read, you may have an infinite loop in your code. " \
-                           "Here are the first 4096 bytes of stdout:\n"
-                    pos = 0
-                    while (pos < 4096):
-                        msg += fp.readline(4096 - pos)
-                        pos = fp.tell()
-                    fp.close()
-                    return msg
+                    if self.text:
+                        msg = "stdout is too large to read, you may have an infinite loop in your code. " \
+                               "Here are the first 4096 bytes of stdout:\n"
+                        pos = 0
+                        while (pos < 4096):
+                            msg += fp.readline(4096 - pos)
+                            pos = fp.tell()
+                        fp.close()
+                        return msg
+                    else:
+                        msg = "stdout is too large to read, you may have an infinite loop in your code. " \
+                               "Here are the first 4096 bytes of stdout:\n"
+                        msg += self.bin2text(fp.read(4096))
+                        return msg.encode() #because we will expect to get binary data if our call gets here
                 else:
                     msg = fp.read()
                     fp.close()
@@ -127,14 +142,20 @@ class CommandRunner:
                 if os.path.getsize(
                     self.stderr_tf
                 ) > 20000000:  #hard coded big number, maybe parametrize this
-                    msg = "stderr is too large to read, you may have an infinite loop in your code. " \
-                           "Here are the first 4096 bytes of stderr:\n"
-                    pos = 0
-                    while (pos < 4096):
-                        msg += fp.readline(4096 - pos)
-                        pos = fp.tell()
-                    fp.close()
-                    return msg
+                    if self.text:
+                        msg = "stderr is too large to read, you may have an infinite loop in your code. " \
+                               "Here are the first 4096 bytes of stderr:\n"
+                        pos = 0
+                        while (pos < 4096):
+                            msg += fp.readline(4096 - pos)
+                            pos = fp.tell()
+                        fp.close()
+                        return msg
+                    else:
+                        msg = "stderr is too large to read, you may have an infinite loop in your code. " \
+                               "Here are the first 4096 bytes of stderr:\n"
+                        msg += self.bin2text(fp.read(4096))
+                        return msg.encode() #because we will expect to get binary data if our call gets here
                 else:
                     msg = fp.read()
                     fp.close()
