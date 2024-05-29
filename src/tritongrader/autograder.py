@@ -39,6 +39,11 @@ class Autograder:
         missing_files_check: bool = True,
         arm=True,
     ):
+        """
+        Note: `build_command` must be given for compilation to happen; there is not implicit build
+        command.
+        """
+
         self.name = name
 
         self.tests_path = tests_path
@@ -97,6 +102,7 @@ class Autograder:
             point_value=point_value,
             expected_retcode=0,
             arm=False,
+            timeout=3,
         )
 
     def create_sandbox_directory(self) -> str:
@@ -120,8 +126,9 @@ class Autograder:
         test_input_path: Optional[str] = None,
         expected_stdout_path: Optional[str] = None,
         expected_stderr_path: Optional[str] = None,
+        expected_exit_status_path: Optional[str] = None,
         commands_prefix: Optional[str] = "cmd-",
-        test_input_prefix: Optional[str] = "test-",
+        test_input_prefix: Optional[str] = "in-",
         expected_stdout_prefix: Optional[str] = "out-",
         expected_stderr_prefix: Optional[str] = "err-",
     ) -> IOTestCaseBulkLoader:
@@ -148,6 +155,9 @@ class Autograder:
             expected_stderr_path=(
                 expected_stderr_path or os.path.join(self.tests_path, "exp")
             ),
+            expected_exit_status_path=(
+                expected_exit_status_path or os.path.join(self.tests_path, "exp")
+            ),
             commands_prefix=commands_prefix,
             test_input_prefix=test_input_prefix,
             expected_stdout_prefix=expected_stdout_prefix,
@@ -155,15 +165,6 @@ class Autograder:
             prefix=prefix,
             default_timeout=default_timeout,
             binary_io=binary_io,
-        )
-
-    def get_default_build_command(self):
-        return "make" if not self.arm else f"make CC={self.ARM_COMPILER}"
-
-    def get_build_command(self):
-        return (
-            self.build_command
-            if self.build_command is not None else self.get_default_build_command()
         )
 
     def copy2sandbox(self, src_dir, item):
