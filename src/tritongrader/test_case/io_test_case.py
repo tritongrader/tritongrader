@@ -102,8 +102,9 @@ class IOTestCase(TestCaseBase):
             return None
 
         # test input is passed in via command line ('<'), which
-        # should always be text, so we don't use open_mode() here.
-        with open(self.input_path, "r") as fp:
+        # ~~should always be text, so we don't use open_mode() here.~~
+        # open_mode __IS__ necessary for binary input files
+        with open(self.input_path, self.open_mode) as fp:
             return fp.read()
 
     def get_execute_command(self):
