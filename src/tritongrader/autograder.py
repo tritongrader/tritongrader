@@ -178,7 +178,7 @@ class Autograder:
             shutil.copy2(path, dst)
             logger.info(f"Copied file from {path} to {dst}...")
         elif os.path.isdir(path):
-            shutil.copytree(path, dst, dir_exists_ok=True)
+            shutil.copytree(path, dst, dirs_exist_ok=True)
             logger.info(f"Copied directory from {path} to {dst}...")
 
     def copy_submission_files(self):
