@@ -212,14 +212,15 @@ class IOTestCaseBulkLoader:
         stderr = os.path.join(
             self.expected_stderr_path, self.expected_stderr_prefix + name
         )
+
+        exit_status = None
         if self.expected_exit_status_path is not None and self.expected_exit_status_prefix is not None:
             file = os.path.join(
                 self.expected_exit_status_path, self.expected_exit_status_prefix + name
             )
-            with open(file, "r") as fin:
-                exit_status = int(fin.read().strip())
-        else:
-            exit_status = None
+            if os.path.exists(file):
+                with open(file, "r") as fin:
+                    exit_status = int(fin.read().strip())
 
         test_name = name if no_prefix else self.prefix + prefix + name
         test_case = IOTestCase(
