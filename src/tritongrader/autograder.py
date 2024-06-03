@@ -147,8 +147,10 @@ class Autograder:
         """
         return IOTestCaseBulkLoader(
             self,
-            commands_path=(commands_path or os.path.join(self.tests_path, "in")),
-            test_input_path=(test_input_path or os.path.join(self.tests_path, "in")),
+            commands_path=(commands_path or os.path.join(
+                self.tests_path, "in")),
+            test_input_path=(test_input_path or os.path.join(
+                self.tests_path, "in")),
             expected_stdout_path=(
                 expected_stdout_path or os.path.join(self.tests_path, "exp")
             ),
@@ -156,7 +158,8 @@ class Autograder:
                 expected_stderr_path or os.path.join(self.tests_path, "exp")
             ),
             expected_exit_status_path=(
-                expected_exit_status_path or os.path.join(self.tests_path, "exp")
+                expected_exit_status_path or os.path.join(
+                    self.tests_path, "exp")
             ),
             commands_prefix=commands_prefix,
             test_input_prefix=test_input_prefix,
@@ -175,7 +178,7 @@ class Autograder:
             shutil.copy2(path, dst)
             logger.info(f"Copied file from {path} to {dst}...")
         elif os.path.isdir(path):
-            shutil.copytree(path, dst)
+            shutil.copytree(path, dst, dirs_exist_ok=True)
             logger.info(f"Copied directory from {path} to {dst}...")
 
     def copy_submission_files(self):
@@ -207,5 +210,6 @@ class Autograder:
         cwd = os.getcwd()
         os.chdir(self.sandbox.name)
         self._execute()
-        logger.info(f"Finished running {self.name} test(s). Returning to {cwd}")
+        logger.info(
+            f"Finished running {self.name} test(s). Returning to {cwd}")
         os.chdir(cwd)
